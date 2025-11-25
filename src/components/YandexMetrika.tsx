@@ -1,31 +1,19 @@
 // src/components/YandexMetrika.tsx
-import { useEffect } from 'react';
+import { YMInitializer } from 'react-yandex-metrika';
 
-export const YandexMetrika = () => {
-  useEffect(() => {
-    // Логируем события в консоль вместо отправки в Яндекс
-    const originalConsoleLog = console.log;
-    console.log = (...args) => {
-      if (args[0]?.includes?.('ym(')) {
-        originalConsoleLog('🎯 Яндекс.Метрика (заглушка):', args[0]);
-      }
-      originalConsoleLog(...args);
-    };
+const YANDEX_COUNTER_ID = 105508703; // ⚡ Ваш реальный ID!
 
-    // Эмуляция ym функции
-    window.ym = (counterId: number, method: string, goal: string, params?: any) => {
-      console.log(`🎯 Яндекс.Метрика: ${goal}`, { counterId, method, params });
-      
-      // Здесь можно добавить отправку в ваш Telegram для тестирования
-      if (goal === 'waitlist_signup') {
-        console.log('📧 Тест: Регистрация в листе ожидания');
-      }
-    };
-
-    return () => {
-      console.log = originalConsoleLog;
-    };
-  }, []);
-
-  return null; // Не рендерим настоящий счетчик
-};
+export const YandexMetrika = () => (
+  <YMInitializer 
+    accounts={[YANDEX_COUNTER_ID]} 
+    options={{
+      clickmap: true,
+      trackLinks: true,
+      accurateTrackBounce: true,
+      webvisor: true,
+      trackHash: true,
+      ecommerce: true
+    }}
+    version="2"
+  />
+);
