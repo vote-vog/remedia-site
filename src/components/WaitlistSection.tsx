@@ -538,7 +538,7 @@ export const WaitlistSection = () => {
                       {!progress.userEmail ? (
                         <>
                           <Sparkles className="w-6 h-6" />
-                          <span className="text-base tracking-wider">Стать Основателем</span>
+                          <span className="text-base tracking-wider">Попробовать</span>
                           <Zap className="w-6 h-6" />
                         </>
                       ) : (

@@ -382,7 +382,7 @@ export const BudgetCalculator = () => {
         completionMessage += `\n• Использовано кредита: ${availableCredit}₽`;
       }
       
-      completionMessage += `\n\nРасскажите, понравился ли процесс сборки, что бы вы добавили в функционал? Ваш отзыв поможет нам стать лучше!`;
+      completionMessage += `\n\nКакие функции добавить? Ваш отзыв поможет нам стать лучше!`;
       
       setMessages(prev => [...prev, {
         id: `ai-final`,
@@ -631,7 +631,7 @@ export const BudgetCalculator = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mt-4 space-y-3"
           >
-            <p className="text-sm font-medium">Ваш отзыв о процессе сборки:</p>
+            <p className="text-sm font-medium">Ваш отзыв о будущем приложении:</p>
             <div className="flex gap-2">
               <Input
                 value={feedbackText}
@@ -648,7 +648,7 @@ export const BudgetCalculator = () => {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Отзыв придет мне в Telegram и поможет сделать приложение лучше
+              Отзыв придет основателю и поможет сделать приложение лучше
             </p>
           </motion.div>
         )}
