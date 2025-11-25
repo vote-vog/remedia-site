@@ -7,22 +7,15 @@ import { RewardsPopup } from "@/components/RewardsPopup";
 import { Share2, Crown, Users, Rocket, Star, Sparkles, Zap, Trophy, Gem, Award } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// 🔥 ВЫНЕСЕМ КОНСТАНТЫ ДЛЯ ПРОИЗВОДИТЕЛЬНОСТИ
-const GLITCH_STRIPE_COUNT = 8;
-const ORGANIZE_STRIPE_COUNT = 10;
-const EXPAND_STRIPE_COUNT = 6;
-const CELEBRATION_EMOJI_COUNT = 12;
-
 export const WaitlistSection = () => {
   const { count } = useGlobalCounter();
   const { progress, handleOpenRewardsPopup, produceWaitlist } = useProgress();
   const [isReferralPopupOpen, setIsReferralPopupOpen] = React.useState(false);
   const [isRewardsPopupOpen, setIsRewardsPopupOpen] = React.useState(false);
   
-  // 🔥 СОСТОЯНИЯ ДЛЯ АНИМАЦИИ ПЕРЕХОДА
+  // 🔥 УПРОЩЕННЫЕ СОСТОЯНИЯ ДЛЯ АНИМАЦИИ
   const [showTransition, setShowTransition] = useState(false);
   const [showNewState, setShowNewState] = useState(false);
-  const [transitionPhase, setTransitionPhase] = useState<'idle' | 'glitch' | 'organize' | 'expand' | 'reveal'>('idle');
 
   // 🔥 МЕМОИЗАЦИЯ ОБРАБОТЧИКОВ
   const handleMainAction = useCallback(() => {
@@ -95,10 +88,8 @@ export const WaitlistSection = () => {
       
       setIsRewardsPopupOpen(false);
       
-      setTimeout(() => {
-        console.log('🔄 WaitlistSection: Auto-refreshing page to update progress...');
-        window.location.reload();
-      }, 1000);
+      // 🔥 ЗАПУСКАЕМ КРАСИВУЮ АНИМАЦИЮ ПЕРЕХОДА
+      startBeautifulTransition();
       
     } catch (error) {
       console.error('❌ WaitlistSection: ошибка сохранения прогресса', error);
@@ -134,198 +125,175 @@ export const WaitlistSection = () => {
     }
   }, []);
 
-  // 🔥 ЗАПУСК АНИМАЦИИ ПРИ ИЗМЕНЕНИИ СОСТОЯНИЯ
-  useEffect(() => {
-    if (progress.waitlist && !showNewState) {
-      console.log('🎬 Запуск люксового перехода!');
-      startLuxuryTransition();
-    }
-  }, [progress.waitlist, showNewState]);
-
-  const startLuxuryTransition = useCallback(() => {
+  // 🔥 КРАСИВАЯ АНИМАЦИЯ ПЕРЕХОДА С ПАЛИТРОЙ БРЕНДА
+  const startBeautifulTransition = useCallback(() => {
+    console.log('🎬 Запуск красивой анимации перехода!');
     setShowTransition(true);
-    setTransitionPhase('glitch');
     
-    // 🔥 ЛЮКСОВЫЕ ТАЙМИНГИ - как у премиальных брендов
+    // Показываем анимацию 2.5 секунды, затем переключаем состояние
     setTimeout(() => {
-      setTransitionPhase('organize');
-      
-      setTimeout(() => {
-        setTransitionPhase('expand');
-        
-        setTimeout(() => {
-          setTransitionPhase('reveal');
-          
-          setTimeout(() => {
-            setShowNewState(true);
-            setShowTransition(false);
-            setTransitionPhase('idle');
-          }, 800); // Увеличенная задержка для плавности
-          
-        }, 1200);
-      }, 1000);
-    }, 1200); // Уменьшено для лучшего UX
+      setShowNewState(true);
+      setTimeout(() => setShowTransition(false), 500);
+    }, 2500);
   }, []);
 
-  // 🔥 ОПТИМИЗИРОВАННЫЕ КОМПОНЕНТЫ АНИМАЦИИ
-  const GlitchOverlay = useMemo(() => () => (
+  // 🔥 АНИМАЦИЯ ВОЛНЫ - брендовая палитра
+  const WaveTransition = useMemo(() => () => (
     <motion.div
       className="fixed inset-0 z-50 pointer-events-none"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      style={{ willChange: 'opacity' }}
+      transition={{ duration: 0.5 }}
     >
-      {[...Array(GLITCH_STRIPE_COUNT)].map((_, i) => (
+      {/* Многослойный градиентный фон в палитре бренда */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-mint-200/40 via-teal-300/30 to-blue-400/20 dark:from-[#004243]/40 dark:via-teal-500/20 dark:to-blue-600/20"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
+      />
+      
+      {/* Главная волна - мятный цвет */}
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-mint-400/50 to-transparent dark:from-[#54F5DF]/50 dark:to-transparent"
+        initial={{ scaleY: 0, opacity: 0 }}
+        animate={{ 
+          scaleY: [0, 1.5, 1.2],
+          opacity: [0, 0.9, 0.3]
+        }}
+        transition={{ 
+          duration: 2,
+          ease: [0.25, 0.46, 0.45, 0.94]
+        }}
+      />
+      
+      {/* Вторичная волна - бирюзовый цвет */}
+      <motion.div
+        className="absolute bottom-10 left-0 right-0 h-32 bg-gradient-to-t from-teal-400/30 to-transparent dark:from-teal-500/30 dark:to-transparent"
+        initial={{ scaleY: 0, opacity: 0 }}
+        animate={{ 
+          scaleY: [0, 1.8, 1.4],
+          opacity: [0, 0.6, 0.2]
+        }}
+        transition={{ 
+          duration: 2.2,
+          delay: 0.3,
+          ease: "easeOut"
+        }}
+      />
+      
+      {/* Плавающие символы статуса */}
+      {[...Array(12)].map((_, i) => (
         <motion.div
-          key={`glitch-${i}`}
-          className="absolute left-0 right-0 bg-white mix-blend-overlay"
+          key={`symbol-${i}`}
+          className="absolute text-2xl"
           style={{
-            height: Math.random() * 8 + 2,
-            top: `${Math.random() * 100}%`,
-            opacity: Math.random() * 0.6 + 0.2,
-          }}
-          animate={{
-            y: [0, -8, 6, -4, 3, 0],
-            opacity: [0.2, 0.6, 0.1, 0.4, 0.15, 0.2],
-            scaleX: [1, 1.05, 0.95, 1.03, 0.97, 1],
-          }}
-          transition={{
-            duration: 0.4 + Math.random() * 0.3,
-            repeat: Infinity,
-            repeatType: "reverse",
-            delay: Math.random() * 0.3,
-            ease: "easeInOut"
-          }}
-        />
-      ))}
-    </motion.div>
-  ), []);
-
-  const OrganizingStripes = useMemo(() => () => (
-    <motion.div
-      className="fixed inset-0 z-50 pointer-events-none"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      style={{ willChange: 'opacity' }}
-    >
-      {[...Array(ORGANIZE_STRIPE_COUNT)].map((_, i) => (
-        <motion.div
-          key={`organize-${i}`}
-          className="absolute left-0 right-0 mix-blend-screen"
-          style={{
-            height: 4 + (i % 2),
-            top: `${(i / ORGANIZE_STRIPE_COUNT) * 100}%`,
-            background: i % 2 === 0 
-              ? "linear-gradient(to right, rgba(102, 221, 204, 0.7), rgba(102, 204, 255, 0.7))" // Мятный + биоюзовый
-              : "linear-gradient(to right, rgba(212, 175, 55, 0.6), rgba(255, 215, 0, 0.6))", // Золотистый
-          }}
-          initial={{
-            y: -80,
-            opacity: 0,
-            scaleX: 0,
-          }}
-          animate={{
-            y: 0,
-            opacity: [0.3, 0.7, 0.5],
-            scaleX: 1,
-          }}
-          transition={{
-            duration: 1.2, // Увеличенная длительность для плавности
-            delay: i * 0.08,
-            ease: [0.25, 0.46, 0.45, 0.94] // Люксовый easing
-          }}
-        />
-      ))}
-    </motion.div>
-  ), []);
-
-  const ExpandingTransition = useMemo(() => () => (
-    <motion.div
-      className="fixed inset-0 z-50"
-      initial={{ 
-        background: "linear-gradient(to bottom, rgba(102, 221, 204, 0.05), rgba(102, 204, 255, 0.05))",
-        opacity: 0 
-      }}
-      animate={{ 
-        background: [
-          "linear-gradient(to bottom, rgba(102, 221, 204, 0.1), rgba(102, 204, 255, 0.1))",
-          "linear-gradient(to bottom, rgba(102, 221, 204, 0.4), rgba(102, 204, 255, 0.4))",
-          "linear-gradient(to bottom, rgba(16, 185, 129, 0.8), rgba(6, 182, 212, 0.8))", // Биоюзовый градиент
-        ],
-        opacity: 1 
-      }}
-      transition={{ 
-        duration: 1.4,
-        ease: [0.33, 1, 0.68, 1] // Супер-плавный easing
-      }}
-      style={{ willChange: 'background, opacity' }}
-    >
-      {[...Array(EXPAND_STRIPE_COUNT)].map((_, i) => (
-        <motion.div
-          key={`expand-${i}`}
-          className="absolute inset-x-0 bg-white/15 mix-blend-overlay"
-          style={{
-            height: 15,
-            top: `${(i / EXPAND_STRIPE_COUNT) * 100}%`,
-          }}
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: [0, 1, 25] }}
-          transition={{
-            duration: 1.2,
-            delay: i * 0.15,
-            ease: [0.34, 1.56, 0.64, 1] // Плавное ускорение
-          }}
-          style={{ willChange: 'transform' }}
-        />
-      ))}
-    </motion.div>
-  ), []);
-
-  const CelebrationEmojis = useMemo(() => () => (
-    <motion.div
-      className="fixed inset-0 z-50 pointer-events-none"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      style={{ willChange: 'opacity' }}
-    >
-      {[
-        "💎", "🌟", "✨", "🎯", "🔮", "🌊", 
-        "💫", "🔥", "🌈", "⚡", "💼", "🏆"
-      ].slice(0, CELEBRATION_EMOJI_COUNT).map((emoji, i) => (
-        <motion.div
-          key={`emoji-${i}`}
-          className="absolute text-2xl" // Уменьшен размер для элегантности
-          style={{
-            left: `${25 + Math.random() * 50}%`,
-            top: `${25 + Math.random() * 50}%`,
+            left: `${5 + Math.random() * 90}%`,
+            top: `${10 + Math.random() * 80}%`,
           }}
           initial={{
             scale: 0,
-            rotate: -120,
+            y: 100,
             opacity: 0,
+            rotate: -45,
           }}
           animate={{
-            scale: [0, 1.2, 0.9, 1],
-            rotate: [120, -45, 15, 0],
-            opacity: [0, 0.8, 1, 1],
-            y: [80, -25, 10, 0],
-            x: [-30, 15, -5, 0],
+            scale: [0, 1.4, 1],
+            y: [100, -20, -80],
+            opacity: [0, 0.9, 0.6, 0],
+            rotate: [-45, 0, 45],
           }}
           transition={{
-            duration: 1.8, // Увеличенная длительность
-            delay: i * 0.12,
-            ease: [0.34, 1.3, 0.64, 1] // Люксовый bouncing
+            duration: 2.5,
+            delay: i * 0.15,
+            ease: "easeOut"
           }}
-          style={{ willChange: 'transform, opacity' }}
         >
-          {emoji}
+          {i % 4 === 0 ? "👑" : i % 4 === 1 ? "💎" : i % 4 === 2 ? "✨" : "🌟"}
         </motion.div>
       ))}
+      
+      {/* Текст подтверждения */}
+      <motion.div
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 1.2, opacity: 0 }}
+        transition={{ duration: 0.8, delay: 0.5 }}
+      >
+        <motion.div
+          className="text-4xl mb-4"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 1, delay: 1 }}
+        >
+          🎉
+        </motion.div>
+        <motion.h3 
+          className="text-2xl font-bold text-white bg-black/30 backdrop-blur-sm px-6 py-3 rounded-2xl dark:bg-[#004243]/80 dark:text-[#54F5DF]"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+        >
+          Добро пожаловать в основатели!
+        </motion.h3>
+      </motion.div>
     </motion.div>
   ), []);
+
+  // 🔥 АНИМАЦИЯ ПОЯВЛЕНИЯ КОНТЕНТА - брендовая палитра
+  const ContentReveal = useMemo(() => () => (
+    <motion.div
+      className="fixed inset-0 z-40 pointer-events-none"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {/* Центральный энергетический шар в палитре бренда */}
+      <motion.div
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-gradient-to-r from-mint-400/40 to-teal-500/40 blur-2xl dark:from-[#54F5DF]/30 dark:to-teal-600/40"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ 
+          scale: [0, 2.5, 3],
+          opacity: [0, 0.8, 0]
+        }}
+        transition={{ 
+          duration: 1.5,
+          ease: "easeOut"
+        }}
+      />
+      
+      {/* Концентрические круги */}
+      {[...Array(4)].map((_, i) => (
+        <motion.div
+          key={`pulse-${i}`}
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border border-mint-300/30 rounded-full dark:border-[#54F5DF]/20"
+          style={{
+            width: 80 + i * 100,
+            height: 80 + i * 100,
+          }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ 
+            scale: 1,
+            opacity: [0, 0.3, 0]
+          }}
+          transition={{ 
+            duration: 2,
+            delay: i * 0.25,
+            ease: "easeOut"
+        }}
+      />
+    ))}
+  </motion.div>
+), []);
+
+  // 🔥 ЗАПУСК АНИМАЦИИ ПРИ ИЗМЕНЕНИИ СОСТОЯНИЯ
+  useEffect(() => {
+    if (progress.waitlist && !showNewState) {
+      console.log('🎬 Запуск анимации перехода в состояние основателя!');
+      startBeautifulTransition();
+    }
+  }, [progress.waitlist, showNewState, startBeautifulTransition]);
 
   // 🔥 АНАЛИТИКА: Отслеживание просмотра секции waitlist
   useEffect(() => {
@@ -347,502 +315,369 @@ export const WaitlistSection = () => {
     return () => clearTimeout(timer);
   }, [progress.waitlist]);
 
-  // 🔥 СОСТОЯНИЕ 2: ПОЛЬЗОВАТЕЛЬ ПОДПИСАЛСЯ
+  // 🔥 СОСТОЯНИЕ 2: ПОЛЬЗОВАТЕЛЬ ПОДПИСАЛСЯ - брендовый дизайн
   if (progress.waitlist && showNewState) {
     return (
       <>
-        {/* 🔥 АНИМАЦИЯ ПЕРЕХОДА */}
-        <AnimatePresence>
+        {/* 🔥 КРАСИВАЯ АНИМАЦИЯ ПЕРЕХОДА */}
+        <AnimatePresence mode="wait">
           {showTransition && (
             <>
-              {transitionPhase === 'glitch' && <GlitchOverlay />}
-              {transitionPhase === 'organize' && <OrganizingStripes />}
-              {transitionPhase === 'expand' && <ExpandingTransition />}
-              {transitionPhase === 'reveal' && <CelebrationEmojis />}
+              <WaveTransition />
+              <ContentReveal />
             </>
           )}
         </AnimatePresence>
 
         <motion.section 
-          className="py-20 px-4 bg-gradient-to-b from-mint-25 to-bioblue-50 relative overflow-hidden"
-          initial={{ opacity: 0, scale: 0.95 }}
+          className="py-20 px-4 bg-gradient-to-br from-mint-25 via-white to-teal-50 dark:from-[#004243] dark:via-[#003334] dark:to-teal-900 relative overflow-hidden min-h-screen"
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ 
-            duration: 1.2, 
-            ease: [0.25, 0.46, 0.45, 0.94] 
+            duration: 1.2,
+            delay: showTransition ? 2.0 : 0,
+            ease: [0.25, 0.46, 0.45, 0.94]
           }}
         >
           
-          {/* Фоновые элементы для "основателя" - премиальная палитра */}
-          <div className="absolute inset-0 opacity-[0.02]">
-            <div className="absolute top-10 left-10 text-6xl">💎</div>
-            <div className="absolute top-20 right-20 text-5xl">🌊</div>
-            <div className="absolute bottom-20 left-20 text-4xl">🔮</div>
-            <div className="absolute bottom-10 right-10 text-6xl">🎯</div>
+          {/* 🔥 ПРЕМИАЛЬНЫЙ ФОН ДЛЯ ОСНОВАТЕЛЕЙ */}
+          <div className="absolute inset-0 opacity-10 dark:opacity-5">
+            <div className="absolute top-1/4 left-1/4 text-8xl">👑</div>
+            <div className="absolute top-1/3 right-1/4 text-7xl">💎</div>
+            <div className="absolute bottom-1/4 left-1/3 text-6xl">✨</div>
+            <div className="absolute bottom-1/3 right-1/3 text-7xl">🌟</div>
           </div>
+
+          {/* Светящиеся акцентные элементы */}
+          <div className="absolute top-0 left-0 w-72 h-72 bg-mint-200/20 dark:bg-[#54F5DF]/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-teal-300/15 dark:bg-teal-600/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
 
           <div className="max-w-6xl mx-auto text-center relative z-10">
             
-            {/* 🔥 ПРЕМИАЛЬНЫЙ БЕЙДЖ ОСНОВАТЕЛЯ */}
+            {/* 🔥 ЭЛЕГАНТНЫЙ БЕЙДЖ ОСНОВАТЕЛЯ */}
             <motion.div 
-              className="inline-flex items-center gap-3 bg-gradient-to-r from-mint-500 to-bioblue-600 text-white text-sm font-semibold px-6 py-3 rounded-full mb-8 shadow-lg border border-gold-200/30"
-              initial={{ scale: 0, y: 20, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
+              className="inline-flex items-center gap-4 bg-gradient-to-r from-mint-500/90 to-teal-600/90 dark:from-[#54F5DF] dark:to-teal-500 text-white dark:text-[#004243] text-sm font-semibold px-8 py-4 rounded-2xl mb-12 shadow-2xl border border-mint-300/40 dark:border-[#54F5DF]/60 backdrop-blur-sm"
+              initial={{ scale: 0, y: -30, opacity: 0, rotateX: 90 }}
+              animate={{ scale: 1, y: 0, opacity: 1, rotateX: 0 }}
               transition={{ 
                 type: "spring", 
                 stiffness: 200, 
                 damping: 15,
-                delay: 0.3 
+                delay: showTransition ? 2.3 : 0.4 
               }}
             >
-              <Award className="w-4 h-4 text-gold-300" />
-              <span className="tracking-wide">ОСНОВАТЕЛЬ REMEDIA</span>
-              <Gem className="w-4 h-4 text-gold-300" />
+              <Award className="w-5 h-5 text-mint-100 dark:text-[#004243]" />
+              <span className="tracking-widest text-mint-50 dark:text-[#004243] font-bold">ОСНОВАТЕЛЬ REMEDIA</span>
+              <Gem className="w-5 h-5 text-mint-100 dark:text-[#004243]" />
             </motion.div>
 
-            <motion.h1 
-              className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-800 mb-6 leading-tight"
-              initial={{ y: 30, opacity: 0 }}
+            {/* 🔥 ГЛАВНЫЙ ЗАГОЛОВОК С АНИМАЦИЕЙ */}
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ 
                 duration: 1.0, 
-                delay: 0.5,
+                delay: showTransition ? 2.5 : 0.6,
                 ease: [0.25, 0.46, 0.45, 0.94]
               }}
             >
-              Добро пожаловать в{" "}
-              <span className="bg-gradient-to-r from-mint-600 to-bioblue-700 bg-clip-text text-transparent">
-                сообщество
-              </span>
-              <br />
-              <span className="text-lg md:text-xl text-slate-600 font-light mt-2 block">
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-slate-800 dark:text-white mb-6 leading-tight">
+                Добро пожаловать в{" "}
+                <span className="bg-gradient-to-r from-mint-600 to-teal-700 dark:from-[#54F5DF] dark:to-teal-400 bg-clip-text text-transparent">
+                  сообщество
+                </span>
+              </h1>
+              <motion.span 
+                className="text-xl md:text-2xl text-slate-600 dark:text-teal-200 font-light block mt-4"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: showTransition ? 2.7 : 0.8 }}
+              >
                 создающих будущее медицины
-              </span>
-            </motion.h1>
+              </motion.span>
+            </motion.div>
             
             <motion.p 
-              className="text-xl md:text-2xl text-slate-600 mb-8 max-w-3xl mx-auto leading-relaxed font-light"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ 
-                duration: 0.9, 
-                delay: 0.7,
-                ease: "easeOut"
-              }}
-            >
-              Теперь вы — часть <strong className="text-slate-800">эксклюзивного сообщества</strong>, 
-              формирующего новую эру персонализированного здравоохранения.
-            </motion.p>
-
-            {/* Статистика основателя */}
-            <motion.div 
-              className="grid md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto"
+              className="text-xl md:text-2xl text-slate-600 dark:text-teal-100 mb-12 max-w-3xl mx-auto leading-relaxed font-light"
               initial={{ y: 25, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ 
                 duration: 0.9, 
-                delay: 0.9,
-                staggerChildren: 0.1
+                delay: showTransition ? 2.8 : 1.0,
+                ease: "easeOut"
+              }}
+            >
+              Теперь вы — часть <strong className="text-slate-800 dark:text-white font-semibold">эксклюзивного сообщества</strong>, 
+              формирующего новую эру персонализированного здравоохранения.
+            </motion.p>
+
+            {/* 🔥 УЛУЧШЕННЫЕ КАРТОЧКИ СТАТИСТИКИ */}
+            <motion.div 
+              className="grid md:grid-cols-3 gap-8 mb-16 max-w-5xl mx-auto"
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ 
+                duration: 0.9, 
+                delay: showTransition ? 3.0 : 1.2,
+                staggerChildren: 0.15
               }}
             >
               
-              {/* Карточка 1: Ваш статус */}
+              {/* Карточка 1: Статус с анимацией */}
               <motion.div 
-                className="bg-white/80 backdrop-blur-sm border border-mint-200 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-all duration-500 hover:-translate-y-1"
-                whileHover={{ scale: 1.02 }}
+                className="bg-white/90 dark:bg-[#004243]/90 backdrop-blur-md border border-mint-200/80 dark:border-[#54F5DF]/30 rounded-3xl p-8 text-center shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group"
+                whileHover={{ scale: 1.03 }}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-mint-400 to-mint-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                  <Crown className="text-white w-5 h-5" />
+                <div className="w-16 h-16 bg-gradient-to-br from-mint-400 to-mint-600 dark:from-[#54F5DF] dark:to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-shadow duration-500">
+                  <Crown className="text-white dark:text-[#004243] w-7 h-7" />
                 </div>
-                <h3 className="font-semibold mb-3 text-slate-800">Статус Основателя</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white">Статус Основателя</h3>
+                <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
                   Пожизненный доступ к эксклюзивным функциям и прямое влияние на развитие платформы
                 </p>
               </motion.div>
 
-              {/* Карточка 2: Сообщество */}
+              {/* Карточка 2: Сообщество с анимацией */}
               <motion.div 
-                className="bg-white/80 backdrop-blur-sm border border-bioblue-200 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-all duration-500 hover:-translate-y-1"
-                whileHover={{ scale: 1.02 }}
+                className="bg-white/90 dark:bg-[#004243]/90 backdrop-blur-md border border-teal-200/80 dark:border-teal-400/30 rounded-3xl p-8 text-center shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group"
+                whileHover={{ scale: 1.03 }}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-bioblue-400 to-bioblue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                  <Users className="text-white w-5 h-5" />
+                <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-400 dark:to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-shadow duration-500">
+                  <Users className="text-white dark:text-[#004243] w-7 h-7" />
                 </div>
-                <h3 className="font-semibold mb-3 text-slate-800">Вы среди первых</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  <strong className="text-2xl text-bioblue-600">{count + 1}+</strong><br />
+                <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white">Вы среди первых</h3>
+                <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
+                  <motion.strong 
+                    className="text-3xl text-teal-600 dark:text-[#54F5DF] block mb-2"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: showTransition ? 3.2 : 1.4 }}
+                  >
+                    {count + 1}+
+                  </motion.strong>
                   человек уже создают будущее медицины вместе с нами
                 </p>
               </motion.div>
 
-              {/* Карточка 3: Миссия */}
+              {/* Карточка 3: Миссия с анимацией */}
               <motion.div 
-                className="bg-white/80 backdrop-blur-sm border border-gold-200 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-all duration-500 hover:-translate-y-1"
-                whileHover={{ scale: 1.02 }}
+                className="bg-white/90 dark:bg-[#004243]/90 backdrop-blur-md border border-blue-200/80 dark:border-blue-400/30 rounded-3xl p-8 text-center shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group"
+                whileHover={{ scale: 1.03 }}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-gold-400 to-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                  <Rocket className="text-white w-5 h-5" />
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-shadow duration-500">
+                  <Rocket className="text-white dark:text-[#004243] w-7 h-7" />
                 </div>
-                <h3 className="font-semibold mb-3 text-slate-800">Ваша роль</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white">Ваша роль</h3>
+                <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
                   Вы одновременно и Проповедник, и Строитель новой системы здравоохранения
                 </p>
               </motion.div>
             </motion.div>
 
-            {/* Призыв к действию - пригласить друзей */}
+            {/* 🔥 ПРИЗЫВ К ДЕЙСТВИЮ С УЛУЧШЕННОЙ АНИМАЦИЕЙ */}
             <motion.div 
               className="space-y-8 max-w-2xl mx-auto"
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ 
-                duration: 0.9, 
-                delay: 1.1,
-                ease: "easeOut"
-              }}
-            >
-              <div className="bg-gradient-to-r from-mint-50 to-bioblue-50 border border-mint-200 rounded-2xl p-6">
-                <p className="text-sm text-mint-800 font-medium mb-3 text-center">
-                  💎 Расширяйте наше сообщество основателей:
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-mint-700">
-                  <span><strong>{count + 1}+</strong> основателей</span>
-                  <span className="text-mint-400">•</span>
-                  <span><strong>7</strong> врачей и специалистов</span>
-                  <span className="text-mint-400">•</span>
-                  <span><strong>2</strong> медицинские организации</span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {/* 🔥 ЛЮКСОВАЯ КНОПКА ДЛЯ ОСНОВАТЕЛЕЙ */}
-                <motion.div
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                >
-                  <Button 
-                    size="lg"
-                    onClick={handleMainAction}
-                    className="w-full bg-gradient-to-r from-mint-500 to-bioblue-600 hover:from-mint-600 hover:to-bioblue-700 text-white text-lg py-6 px-8 shadow-lg hover:shadow-xl transition-all duration-500 font-medium relative overflow-hidden group border border-bioblue-400/30"
-                  >
-                    {/* 🔥 УЛУЧШЕННАЯ АНИМАЦИЯ БЛЕСТОК */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                    
-                    <span className="flex items-center gap-3 relative z-10">
-                      {!progress.userEmail ? (
-                        <>
-                          <Sparkles className="w-5 h-5" />
-                          <span className="text-base tracking-wide">Стать Основателем</span>
-                          <Zap className="w-5 h-5" />
-                        </>
-                      ) : (
-                        <>
-                          <Share2 className="w-5 h-5" />
-                          <span className="text-base tracking-wide">Пригласить друзей</span>
-                          <Trophy className="w-5 h-5" />
-                        </>
-                      )}
-                    </span>
-                  </Button>
-                </motion.div>
-                
-                <div className="space-y-2">
-                  <p className="text-sm text-slate-600 text-center font-light">
-                    {!progress.userEmail 
-                      ? "Присоединяйтесь к закрытой группе первых пользователей"
-                      : "Помогите друзьям и близким обрести контроль над здоровьем"
-                    }
-                  </p>
-                  <p className="text-xs text-slate-500 text-center">
-                    {!progress.userEmail 
-                      ? "Получите пожизненный статус основателя и влияние на развитие"
-                      : "Получайте +20% к прогрессу за каждого приглашенного друга"
-                    }
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Дополнительная информация для основателей */}
-            <motion.div 
-              className="mt-12 grid md:grid-cols-2 gap-8 max-w-4xl mx-auto"
               initial={{ y: 35, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ 
                 duration: 0.9, 
-                delay: 1.3,
+                delay: showTransition ? 3.3 : 1.6,
                 ease: "easeOut"
               }}
             >
-              <div className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl p-6 text-left hover:shadow-md transition-all duration-500">
-                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-slate-800">
-                  <Star className="w-5 h-5 text-gold-500" />
-                  Ваши привилегии
-                </h3>
-                <ul className="text-sm text-slate-600 space-y-2">
-                  <li className="flex items-start gap-2">
-                    <Gem className="w-4 h-4 text-mint-500 mt-0.5 flex-shrink-0" />
-                    <span>Пожизненный статус Foundation Member</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Zap className="w-4 h-4 text-bioblue-500 mt-0.5 flex-shrink-0" />
-                    <span>Участие в закрытых AMA с командой</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Rocket className="w-4 h-4 text-gold-500 mt-0.5 flex-shrink-0" />
-                    <span>Ранний доступ ко всем новым функциям</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Crown className="w-4 h-4 text-mint-500 mt-0.5 flex-shrink-0" />
-                    <span>Влияние на roadmap продукта</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl p-6 text-left hover:shadow-md transition-all duration-500">
-                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-slate-800">
-                  <Rocket className="w-5 h-5 text-bioblue-500" />
-                  Что будет дальше?
-                </h3>
-                <ul className="text-sm text-slate-600 space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="text-mint-500 font-medium mt-0.5">→</span>
-                    <span><strong>Следующие 2 недели:</strong> SechenovTech Acceleration DemoDay</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-bioblue-500 font-medium mt-0.5">→</span>
-                    <span><strong>Январь:</strong> Закрытый бета-тест с вашим участием</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gold-500 font-medium mt-0.5">→</span>
-                    <span><strong>3 месяца:</strong> Цифровой двойник здоровья</span>
-                  </li>
-                </ul>
-              </div>
-            </motion.div>
-
-            {/* Финальное вдохновляющее сообщение */}
-            <motion.div 
-              className="mt-12 p-6 border-l-4 border-mint-400 bg-mint-50 rounded-r-2xl max-w-2xl mx-auto hover:shadow-md transition-all duration-500"
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ 
-                duration: 0.8, 
-                delay: 1.5,
-                ease: "easeOut"
-              }}
-            >
-              <p className="text-sm text-mint-800 text-center font-light leading-relaxed">
-                <strong className="font-medium">Благодарим за доверие нашей миссии.</strong> Вместе мы создаем среду, 
-                где управление здоровьем становится осознанным и управляемым процессом. 
-                Ваш вклад — неотъемлемая часть этих изменений.
-              </p>
-            </motion.div>
-          </div>
-        </motion.section>
-
-        {/* 🔥 ОБА ПОПАПА */}
-        <ReferralPopup
-          isOpen={isReferralPopupOpen}
-          onClose={handleCloseReferralPopup}
-          referralCode="REM-FOUNDER"
-          userEmail={progress.userEmail}
-          onNativeShare={handleNativeShare} // Передаем улучшенный обработчик
-        />
-
-        <RewardsPopup
-          isOpen={isRewardsPopupOpen}
-          onClose={handleCloseRewardsPopup}
-          onClaim={handleClaimRewards}
-          initialMode="rewards"
-        />
-      </>
-    );
-  }
-
-  // 🔥 СОСТОЯНИЕ 1: ПОЛЬЗОВАТЕЛЬ НЕ ПОДПИСАЛСЯ - УЛУЧШЕННАЯ ВЕРСИЯ
-  if (!progress.waitlist) {
-    return (
-      <>
-        <section id="waitlist" className="py-20 px-4 bg-gradient-to-b from-slate-50 to-mint-25 relative overflow-hidden">
-          
-          {/* Фоновые элементы - премиальная палитра */}
-          <div className="absolute inset-0 opacity-[0.03]">
-            <div className="absolute top-10 left-10 text-6xl">🧬</div>
-            <div className="absolute top-20 right-20 text-5xl">💫</div>
-            <div className="absolute bottom-20 left-20 text-4xl">🔮</div>
-            <div className="absolute bottom-10 right-10 text-6xl">🌊</div>
-          </div>
-
-          <div className="max-w-6xl mx-auto text-center relative z-10">
-            
-            {/* Заголовок с акцентом на миссию */}
-            <motion.div 
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-bioblue-500 to-mint-600 text-white text-sm font-medium px-4 py-2 rounded-full mb-6 shadow-lg"
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8 }}
-            >
-              <Rocket className="w-4 h-4" />
-              <span>СТАНЬТЕ ЧАСТЬЮ ПЕРЕМЕН</span>
-            </motion.div>
-
-            <motion.h1 
-              className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-800 mb-6 leading-tight"
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.9, delay: 0.2 }}
-            >
-              Попробовав приложение.
-              <br />
-              Вы <span className="bg-gradient-to-r from-bioblue-600 to-mint-700 bg-clip-text text-transparent">создаете будущее</span> здравоохранения.
-            </motion.h1>
-            
-            <motion.p 
-              className="text-xl md:text-2xl text-slate-600 mb-8 max-w-3xl mx-auto leading-relaxed font-light"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.9, delay: 0.4 }}
-            >
-              Присоединяйтесь к сообществу первых пользователей, которые помогают нам построить{" "}
-              <strong className="text-slate-800">первый в мире "цифровой двойник" здоровья</strong> — 
-              систему, которая учится на вашем опыте и делает медицину персонализированной для всех.
-            </motion.p>
-
-            {/* Упрощенные ценности */}
-            <motion.div 
-              className="grid md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto"
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.9, delay: 0.6, staggerChildren: 0.1 }}
-            >
-              
-              {/* Ценность 1: Личная польза */}
               <motion.div 
-                className="bg-white/80 backdrop-blur-sm border border-mint-200 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-all duration-500 hover:-translate-y-1"
+                className="bg-gradient-to-r from-mint-50/80 to-teal-50/80 dark:from-[#54F5DF]/10 dark:to-teal-500/10 border border-mint-200 dark:border-[#54F5DF]/30 rounded-2xl p-6 backdrop-blur-sm"
                 whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-mint-400 to-mint-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-semibold mb-3 text-slate-800">Польза для вас</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Начните понимать свое тело. Получайте персонализированные инсайты о том, что действительно влияет на ваше самочувствие.
+                <p className="text-sm text-mint-800 dark:text-[#54F5DF] font-medium mb-3 text-center">
+                  💎 Расширяйте наше сообщество основателей:
                 </p>
-              </motion.div>
-
-              {/* Ценность 2: Сообщество */}
-              <motion.div 
-                className="bg-white/80 backdrop-blur-sm border border-bioblue-200 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-all duration-500 hover:-translate-y-1"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="w-12 h-12 bg-gradient-to-br from-bioblue-400 to-bioblue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-semibold mb-3 text-slate-800">Влияние на продукт</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Ваш голос будет услышан. Помогайте нам создавать функции, которые действительно решают ваши проблемы.
-                </p>
-              </motion.div>
-
-              {/* Ценность 3: Наследие */}
-              <motion.div 
-                className="bg-white/80 backdrop-blur-sm border border-gold-200 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-all duration-500 hover:-translate-y-1"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="w-12 h-12 bg-gradient-to-br from-gold-400 to-gold-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                  <Trophy className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-semibold mb-3 text-slate-800">Изменение системы</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Ваш опыт поможет тысячам других людей. Вместе мы создаем медицину, которая слушает и понимает пациента.
-                </p>
-              </motion.div>
-            </motion.div>
-
-            {/* Social Proof + CTA */}
-            <motion.div 
-              className="space-y-8 max-w-2xl mx-auto"
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.9, delay: 0.8 }}
-            >
-              <div className="bg-gradient-to-r from-mint-50 to-bioblue-50 border border-mint-200 rounded-2xl p-6">
-                <p className="text-sm text-mint-800 font-medium mb-3 text-center">
-                  💎 Уже формируют будущее с нами:
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-mint-700">
-                  <span><strong>{count}+</strong> первых пользователей</span>
-                  <span className="text-mint-400">•</span>
+                <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-mint-700 dark:text-teal-300">
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: showTransition ? 3.4 : 1.7 }}
+                  >
+                    <strong>{count + 1}+</strong> основателей
+                  </motion.span>
+                  <span className="text-mint-400 dark:text-teal-500">•</span>
                   <span><strong>7</strong> врачей и специалистов</span>
-                  <span className="text-mint-400">•</span>
+                  <span className="text-mint-400 dark:text-teal-500">•</span>
                   <span><strong>2</strong> медицинские организации</span>
                 </div>
-              </div>
+              </motion.div>
 
               <div className="space-y-4">
-                {/* 🔥 ЛЮКСОВАЯ КНОПКА ДЛЯ НОВЫХ ПОЛЬЗОВАТЕЛЕЙ */}
+                {/* 🔥 ЛЮКСОВАЯ АНИМИРОВАННАЯ КНОПКА */}
                 <motion.div
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: showTransition ? 3.5 : 1.8 }}
                 >
                   <Button 
                     size="lg"
                     onClick={handleMainAction}
-                    className="w-full bg-gradient-to-r from-bioblue-500 to-mint-600 hover:from-bioblue-600 hover:to-mint-700 text-white text-lg py-6 px-8 shadow-lg hover:shadow-xl transition-all duration-500 font-medium relative overflow-hidden group border border-mint-400/30"
+                    className="w-full bg-gradient-to-r from-mint-500 to-teal-600 hover:from-mint-600 hover:to-teal-700 dark:from-[#54F5DF] dark:to-teal-500 dark:hover:from-[#54F5DF] dark:hover:to-teal-400 text-white dark:text-[#004243] text-lg py-7 px-8 shadow-xl hover:shadow-2xl transition-all duration-500 font-semibold relative overflow-hidden group border-0"
                   >
-                    {/* 🔥 УЛУЧШЕННАЯ АНИМАЦИЯ БЛЕСТОК */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                    {/* Анимация блесток */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                    
+                    {/* Светящийся эффект */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-mint-400/20 to-teal-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 dark:from-[#54F5DF]/30 dark:to-teal-400/30" />
                     
                     <span className="flex items-center gap-3 relative z-10">
                       {!progress.userEmail ? (
                         <>
-                          <Rocket className="w-5 h-5" />
-                          <span className="text-base tracking-wide">Стать Основателем</span>
-                          <Sparkles className="w-5 h-5" />
+                          <Sparkles className="w-6 h-6" />
+                          <span className="text-base tracking-wider">Стать Основателем</span>
+                          <Zap className="w-6 h-6" />
                         </>
                       ) : (
                         <>
-                          <Share2 className="w-5 h-5" />
-                          <span className="text-base tracking-wide">Пригласить друзей</span>
-                          <Zap className="w-5 h-5" />
+                          <Share2 className="w-6 h-6" />
+                          <span className="text-base tracking-wider">Пригласить друзей</span>
+                          <Trophy className="w-6 h-6" />
                         </>
                       )}
                     </span>
                   </Button>
                 </motion.div>
                 
-                <div className="space-y-2">
-                  <p className="text-sm text-slate-600 text-center font-light">
+                <motion.div 
+                  className="space-y-2"
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: showTransition ? 3.6 : 2.0 }}
+                >
+                  <p className="text-sm text-slate-600 dark:text-teal-200 text-center font-light">
                     {!progress.userEmail 
                       ? "Присоединяйтесь к закрытой группе первых пользователей"
                       : "Помогите друзьям и близким обрести контроль над здоровьем"
                     }
                   </p>
-                  <p className="text-xs text-slate-500 text-center">
+                  <p className="text-xs text-slate-500 dark:text-teal-300 text-center">
                     {!progress.userEmail 
                       ? "Получите пожизненный статус основателя и влияние на развитие"
                       : "Получайте +20% к прогрессу за каждого приглашенного друга"
                     }
                   </p>
-                </div>
+                </motion.div>
               </div>
             </motion.div>
 
-            {/* Финальное сообщение о миссии */}
+            {/* 🔥 УЛУЧШЕННЫЕ БЛОКИ ДОПОЛНИТЕЛЬНОЙ ИНФОРМАЦИИ */}
             <motion.div 
-              className="mt-12 p-6 border-l-4 border-bioblue-400 bg-bioblue-50 rounded-r-2xl max-w-2xl mx-auto hover:shadow-md transition-all duration-500"
+              className="mt-16 grid md:grid-cols-2 gap-8 max-w-4xl mx-auto"
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ 
+                duration: 0.9, 
+                delay: showTransition ? 3.8 : 2.2,
+                ease: "easeOut"
+              }}
+            >
+              <motion.div 
+                className="bg-white/90 dark:bg-[#004243]/90 backdrop-blur-md border border-slate-200 dark:border-teal-400/20 rounded-3xl p-8 text-left hover:shadow-xl transition-all duration-500 group"
+                whileHover={{ y: -5 }}
+              >
+                <h3 className="font-bold text-xl mb-4 flex items-center gap-3 text-slate-800 dark:text-white">
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                  >
+                    <Star className="w-6 h-6 text-mint-500 dark:text-[#54F5DF]" />
+                  </motion.div>
+                  Ваши привилегии
+                </h3>
+                <ul className="text-sm text-slate-600 dark:text-teal-200 space-y-3">
+                  {[
+                    { icon: Gem, text: "Пожизненный статус Foundation Member", color: "text-mint-500 dark:text-[#54F5DF]" },
+                    { icon: Zap, text: "Участие в закрытых AMA с командой", color: "text-teal-500 dark:text-teal-400" },
+                    { icon: Rocket, text: "Ранний доступ ко всем новым функциям", color: "text-blue-500 dark:text-blue-400" },
+                    { icon: Crown, text: "Влияние на roadmap продукта", color: "text-mint-500 dark:text-[#54F5DF]" }
+                  ].map((item, index) => (
+                    <motion.li 
+                      key={index}
+                      className="flex items-start gap-3 group-hover:translate-x-1 transition-transform duration-300"
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: showTransition ? 4.0 + index * 0.1 : 2.4 + index * 0.1 }}
+                    >
+                      <item.icon className={`w-5 h-5 ${item.color} mt-0.5 flex-shrink-0`} />
+                      <span>{item.text}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
+
+              <motion.div 
+                className="bg-white/90 dark:bg-[#004243]/90 backdrop-blur-md border border-slate-200 dark:border-teal-400/20 rounded-3xl p-8 text-left hover:shadow-xl transition-all duration-500 group"
+                whileHover={{ y: -5 }}
+              >
+                <h3 className="font-bold text-xl mb-4 flex items-center gap-3 text-slate-800 dark:text-white">
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Rocket className="w-6 h-6 text-teal-500 dark:text-teal-400" />
+                  </motion.div>
+                  Что будет дальше?
+                </h3>
+                <ul className="text-sm text-slate-600 dark:text-teal-200 space-y-3">
+                  {[
+                    { marker: "→", text: "Следующие 2 недели: SechenovTech Acceleration DemoDay", color: "text-mint-500 dark:text-[#54F5DF]" },
+                    { marker: "→", text: "Январь: Закрытый бета-тест с вашим участием", color: "text-teal-500 dark:text-teal-400" },
+                    { marker: "→", text: "3 месяца: Цифровой двойник здоровья", color: "text-blue-500 dark:text-blue-400" }
+                  ].map((item, index) => (
+                    <motion.li 
+                      key={index}
+                      className="flex items-start gap-3 group-hover:translate-x-1 transition-transform duration-300"
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: showTransition ? 4.2 + index * 0.1 : 2.6 + index * 0.1 }}
+                    >
+                      <span className={`font-semibold mt-0.5 flex-shrink-0 ${item.color}`}>{item.marker}</span>
+                      <span>{item.text}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
+            </motion.div>
+
+            {/* 🔥 ФИНАЛЬНОЕ ВДОХНОВЛЯЮЩЕЕ СООБЩЕНИЕ С АНИМАЦИЕЙ */}
+            <motion.div 
+              className="mt-16 p-8 border-l-4 border-mint-400 dark:border-[#54F5DF] bg-gradient-to-r from-mint-50/80 to-transparent dark:from-[#54F5DF]/10 dark:to-transparent rounded-2xl max-w-2xl mx-auto hover:shadow-lg transition-all duration-500 group"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 1.0 }}
+              transition={{ 
+                duration: 0.8, 
+                delay: showTransition ? 4.5 : 3.0,
+                ease: "easeOut"
+              }}
+              whileHover={{ scale: 1.02 }}
             >
-              <p className="text-sm text-bioblue-800 text-center font-light leading-relaxed">
-                <strong className="font-medium">Наша миссия:</strong> Вернуть человеку с хроническим заболеванием чувство контроля над собственной жизнью. 
-                Мы начинаем с простого дневника, но строим будущее, где здоровье — это не лотерея, а осознанный выбор.
-              </p>
+              <motion.p 
+                className="text-sm text-mint-800 dark:text-[#54F5DF] text-center font-light leading-relaxed"
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: showTransition ? 4.7 : 3.2 }}
+              >
+                <strong className="font-semibold">Благодарим за доверие нашей миссии.</strong> Вместе мы создаем среду, 
+                где управление здоровьем становится осознанным и управляемым процессом. 
+                Ваш вклад — неотъемлемая часть этих изменений.
+              </motion.p>
             </motion.div>
           </div>
-        </section>
+        </motion.section>
 
         {/* 🔥 ОБА ПОПАПА */}
         <ReferralPopup
@@ -863,44 +698,206 @@ export const WaitlistSection = () => {
     );
   }
 
-  // 🔥 ПРОМЕЖУТОЧНОЕ СОСТОЯНИЕ - ПОКАЗЫВАЕМ ПЕРВОЕ СОСТОЯНИЕ С АНИМАЦИЕЙ
+  // 🔥 СОСТОЯНИЕ 1: ПОЛЬЗОВАТЕЛЬ НЕ ПОДПИСАЛСЯ - брендовый дизайн
   return (
     <>
-      <AnimatePresence>
-        {showTransition && (
-          <>
-            {transitionPhase === 'glitch' && <GlitchOverlay />}
-            {transitionPhase === 'organize' && <OrganizingStripes />}
-            {transitionPhase === 'expand' && <ExpandingTransition />}
-            {transitionPhase === 'reveal' && <CelebrationEmojis />}
-          </>
-        )}
-      </AnimatePresence>
+      <section id="waitlist" className="py-20 px-4 bg-gradient-to-b from-slate-50 to-mint-25 dark:from-[#004243] dark:to-teal-900 relative overflow-hidden">
+        
+        {/* Фоновые элементы - брендовая палитра */}
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-5">
+          <div className="absolute top-10 left-10 text-6xl">🧬</div>
+          <div className="absolute top-20 right-20 text-5xl">💫</div>
+          <div className="absolute bottom-20 left-20 text-4xl">🔮</div>
+          <div className="absolute bottom-10 right-10 text-6xl">🌊</div>
+        </div>
 
-      {/* Показываем первое состояние во время анимации */}
-      <section id="waitlist" className="py-20 px-4 bg-gradient-to-b from-slate-50 to-mint-25 relative overflow-hidden">
-        <div className="max-w-6xl mx-auto text-center">
-          {/* Скелетон для загрузки */}
-          <div className="animate-pulse">
-            <div className="h-6 w-48 bg-slate-200 rounded-full mx-auto mb-6"></div>
-            <div className="h-12 bg-slate-200 rounded-lg mb-4 max-w-2xl mx-auto"></div>
-            <div className="h-4 bg-slate-200 rounded mb-8 max-w-3xl mx-auto"></div>
+        <div className="max-w-6xl mx-auto text-center relative z-10">
+          
+          {/* Заголовок с акцентом на миссию */}
+          <motion.div 
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-mint-600 dark:from-[#54F5DF] dark:to-teal-400 text-white dark:text-[#004243] text-sm font-medium px-4 py-2 rounded-full mb-6 shadow-lg"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8 }}
+          >
+            <Rocket className="w-4 h-4" />
+            <span>СТАНЬТЕ ЧАСТЬЮ ПЕРЕМЕН</span>
+          </motion.div>
+
+          <motion.h1 
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-800 dark:text-white mb-6 leading-tight"
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.9, delay: 0.2 }}
+          >
+            Попробовав приложение.
+            <br />
+            Вы <span className="bg-gradient-to-r from-teal-600 to-mint-700 dark:from-[#54F5DF] dark:to-teal-400 bg-clip-text text-transparent">
+              создаете будущее
+            </span> здравоохранения.
+          </motion.h1>
+          
+          <motion.p 
+            className="text-xl md:text-2xl text-slate-600 dark:text-teal-200 mb-8 max-w-3xl mx-auto leading-relaxed font-light"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.9, delay: 0.4 }}
+          >
+            Присоединяйтесь к сообществу первых пользователей, которые помогают нам построить{" "}
+            <strong className="text-slate-800 dark:text-white">первый в мире "цифровой двойник" здоровья</strong> — 
+            систему, которая учится на вашем опыте и делает медицину персонализированной для всех.
+          </motion.p>
+
+          {/* Упрощенные ценности */}
+          <motion.div 
+            className="grid md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto"
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.9, delay: 0.6, staggerChildren: 0.1 }}
+          >
             
-            <div className="grid md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl p-6">
-                  <div className="w-12 h-12 bg-slate-200 rounded-full mx-auto mb-4"></div>
-                  <div className="h-4 bg-slate-200 rounded w-3/4 mx-auto mb-2"></div>
-                  <div className="h-3 bg-slate-200 rounded w-full mb-1"></div>
-                  <div className="h-3 bg-slate-200 rounded w-5/6 mx-auto"></div>
-                </div>
-              ))}
+            {/* Ценность 1: Личная польза */}
+            <motion.div 
+              className="bg-white/80 dark:bg-[#004243]/80 backdrop-blur-sm border border-mint-200 dark:border-[#54F5DF]/30 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-all duration-500 hover:-translate-y-1"
+              whileHover={{ scale: 1.02 }}
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-mint-400 to-mint-600 dark:from-[#54F5DF] dark:to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <Sparkles className="w-6 h-6 text-white dark:text-[#004243]" />
+              </div>
+              <h3 className="font-semibold mb-3 text-slate-800 dark:text-white">Польза для вас</h3>
+              <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
+                Начните понимать свое тело. Получайте персонализированные инсайты о том, что действительно влияет на ваше самочувствие.
+              </p>
+            </motion.div>
+
+            {/* Ценность 2: Сообщество */}
+            <motion.div 
+              className="bg-white/80 dark:bg-[#004243]/80 backdrop-blur-sm border border-teal-200 dark:border-teal-400/30 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-all duration-500 hover:-translate-y-1"
+              whileHover={{ scale: 1.02 }}
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-400 dark:to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <Users className="w-6 h-6 text-white dark:text-[#004243]" />
+              </div>
+              <h3 className="font-semibold mb-3 text-slate-800 dark:text-white">Влияние на продукт</h3>
+              <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
+                Ваш голос будет услышан. Помогайте нам создавать функции, которые действительно решают ваши проблемы.
+              </p>
+            </motion.div>
+
+            {/* Ценность 3: Наследие */}
+            <motion.div 
+              className="bg-white/80 dark:bg-[#004243]/80 backdrop-blur-sm border border-blue-200 dark:border-blue-400/30 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-all duration-500 hover:-translate-y-1"
+              whileHover={{ scale: 1.02 }}
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <Trophy className="w-6 h-6 text-white dark:text-[#004243]" />
+              </div>
+              <h3 className="font-semibold mb-3 text-slate-800 dark:text-white">Изменение системы</h3>
+              <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
+                Ваш опыт поможет тысячам других людей. Вместе мы создаем медицину, которая слушает и понимает пациента.
+              </p>
+            </motion.div>
+          </motion.div>
+
+          {/* Social Proof + CTA */}
+          <motion.div 
+            className="space-y-8 max-w-2xl mx-auto"
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.9, delay: 0.8 }}
+          >
+            <div className="bg-gradient-to-r from-mint-50 to-teal-50 dark:from-[#54F5DF]/10 dark:to-teal-500/10 border border-mint-200 dark:border-[#54F5DF]/30 rounded-2xl p-6">
+              <p className="text-sm text-mint-800 dark:text-[#54F5DF] font-medium mb-3 text-center">
+                💎 Уже формируют будущее с нами:
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-mint-700 dark:text-teal-300">
+                <span><strong>{count}+</strong> первых пользователей</span>
+                <span className="text-mint-400 dark:text-teal-500">•</span>
+                <span><strong>7</strong> врачей и специалистов</span>
+                <span className="text-mint-400 dark:text-teal-500">•</span>
+                <span><strong>2</strong> медицинские организации</span>
+              </div>
             </div>
-            
-            <div className="h-14 bg-slate-200 rounded-lg max-w-2xl mx-auto"></div>
-          </div>
+
+            <div className="space-y-4">
+              {/* 🔥 ЛЮКСОВАЯ КНОПКА ДЛЯ НОВЫХ ПОЛЬЗОВАТЕЛЕЙ */}
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+              >
+                <Button 
+                  size="lg"
+                  onClick={handleMainAction}
+                  className="w-full bg-gradient-to-r from-teal-500 to-mint-600 hover:from-teal-600 hover:to-mint-700 dark:from-[#54F5DF] dark:to-teal-500 dark:hover:from-[#54F5DF] dark:hover:to-teal-400 text-white dark:text-[#004243] text-lg py-6 px-8 shadow-lg hover:shadow-xl transition-all duration-500 font-medium relative overflow-hidden group border border-mint-400/30 dark:border-[#54F5DF]/50"
+                >
+                  {/* 🔥 УЛУЧШЕННАЯ АНИМАЦИЯ БЛЕСТОК */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                  
+                  <span className="flex items-center gap-3 relative z-10">
+                    {!progress.userEmail ? (
+                      <>
+                        <Rocket className="w-5 h-5" />
+                        <span className="text-base tracking-wide">Стать Основателем</span>
+                        <Sparkles className="w-5 h-5" />
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="w-5 h-5" />
+                        <span className="text-base tracking-wide">Пригласить друзей</span>
+                        <Zap className="w-5 h-5" />
+                      </>
+                    )}
+                  </span>
+                </Button>
+              </motion.div>
+              
+              <div className="space-y-2">
+                <p className="text-sm text-slate-600 dark:text-teal-200 text-center font-light">
+                  {!progress.userEmail 
+                    ? "Присоединяйтесь к закрытой группе первых пользователей"
+                    : "Помогите друзьям и близким обрести контроль над здоровьем"
+                  }
+                </p>
+                <p className="text-xs text-slate-500 dark:text-teal-300 text-center">
+                  {!progress.userEmail 
+                    ? "Получите пожизненный статус основателя и влияние на развитие"
+                    : "Получайте +20% к прогрессу за каждого приглашенного друга"
+                  }
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Финальное сообщение о миссии */}
+          <motion.div 
+            className="mt-12 p-6 border-l-4 border-teal-400 dark:border-[#54F5DF] bg-teal-50 dark:bg-[#54F5DF]/10 rounded-r-2xl max-w-2xl mx-auto hover:shadow-md transition-all duration-500"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 1.0 }}
+          >
+            <p className="text-sm text-teal-800 dark:text-[#54F5DF] text-center font-light leading-relaxed">
+              <strong className="font-medium">Наша миссия:</strong> Вернуть человеку с хроническим заболеванием чувство контроля над собственной жизнью. 
+              Мы начинаем с простого дневника, но строим будущее, где здоровье — это не лотерея, а осознанный выбор.
+            </p>
+          </motion.div>
         </div>
       </section>
+
+      {/* 🔥 ОБА ПОПАПА */}
+      <ReferralPopup
+        isOpen={isReferralPopupOpen}
+        onClose={handleCloseReferralPopup}
+        referralCode="REM-FOUNDER"
+        userEmail={progress.userEmail}
+        onNativeShare={handleNativeShare}
+      />
+
+      <RewardsPopup
+        isOpen={isRewardsPopupOpen}
+        onClose={handleCloseRewardsPopup}
+        onClaim={handleClaimRewards}
+        initialMode="rewards"
+      />
     </>
   );
 };

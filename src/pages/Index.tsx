@@ -13,7 +13,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Header } from "@/components/Header";
 import { ProgressBar } from "@/components/ProgressBar";
 import { Footer } from "@/components/layout/Footer";
-import { EasterEggs } from "@/components/EasterEggs"; // 🎯 ПАСХАЛКИ
+import { EasterEggs } from "@/components/EasterEggs";
 import { useProgress } from "@/hooks/useProgress";
 
 const Index = () => {
