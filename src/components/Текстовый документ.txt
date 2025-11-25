@@ -1,0 +1,445 @@
+// src/components/ProgressBar.low-version.tsx
+import { motion, useScroll, useTransform, useInView } from "framer-motion";
+import { useProgress } from "@/hooks/useProgress";
+import { useToast } from "@/hooks/use-toast";
+import { useRef, useEffect, useState, useMemo } from "react";
+
+interface ProgressBarProps {
+  onOpenRewards?: () => void;
+  onOpenReferral?: () => void;
+}
+
+// Константы для оптимизации
+const MAX_PARTICLES = 15; // Уменьшили с 25
+const MAX_BUBBLES = 8;    // Уменьшили с 12
+const MAX_SPARKS = 8;     // Уменьшили с 15
+
+export const ProgressBar = ({ onOpenRewards, onOpenReferral }: ProgressBarProps) => {
+  const { completionPercentage, progress } = useProgress();
+  const { toast } = useToast();
+  const containerRef = useRef(null);
+  const isInView = useInView(containerRef, { once: true, margin: "-20%" });
+
+  const hasEmail = !!progress.userEmail;
+  const isOverPlan = completionPercentage > 100;
+  const isNearLimit = completionPercentage > 90 && !isOverPlan;
+  const isMaxPower = completionPercentage >= 200;
+
+  // Мемоизация вычислений
+  const { baseHeight, magicHeight } = useMemo(() => ({
+    baseHeight: Math.min(completionPercentage, 100),
+    magicHeight: isOverPlan ? Math.min(completionPercentage - 100, 100) : 0
+  }), [completionPercentage, isOverPlan]);
+
+  const { scrollYProgress } = useScroll();
+  const opacity = useTransform(scrollYProgress, [0, 0.12], [0, 1]);
+
+  // Оптимизированные массивы частиц
+  const particlesArray = useMemo(() => 
+    Array.from({ length: isMaxPower ? MAX_PARTICLES : 0 }), 
+    [isMaxPower]
+  );
+
+  const bubblesArray = useMemo(() => 
+    Array.from({ length: isMaxPower ? MAX_BUBBLES : 4 }), 
+    [isMaxPower]
+  );
+
+  const sparksArray = useMemo(() => 
+    Array.from({ length: isMaxPower ? MAX_SPARKS : 4 }), 
+    [isMaxPower]
+  );
+
+  // Дебаунс для взрыва
+  const [isExploding, setIsExploding] = useState(false);
+  
+  useEffect(() => {
+    if (isMaxPower && !isExploding) {
+      setIsExploding(true);
+      const timer = setTimeout(() => setIsExploding(false), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isMaxPower, isExploding]);
+
+  // Оптимизированный звуковой эффект
+  const playClickSound = useMemo(() => {
+    if (typeof window === 'undefined' || !('AudioContext' in window)) return () => {};
+    
+    return () => {
+      try {
+        const context = new AudioContext();
+        if (context.state === 'suspended') return;
+        
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+        
+        oscillator.frequency.value = isOverPlan ? 800 : 600;
+        gainNode.gain.value = 0.05; // Тише
+        
+        oscillator.start();
+        gainNode.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.08);
+        oscillator.stop(context.currentTime + 0.08);
+      } catch (error) {
+        // Игнорируем ошибки аудио
+      }
+    };
+  }, [isOverPlan]);
+
+  const handleClick = () => {
+    playClickSound();
+    
+    if (!hasEmail) {
+      onOpenRewards?.();
+      toast({
+        title: "Получите бонусы!",
+        description: "Подпишитесь на лист ожидания",
+        variant: "default",
+      });
+    } else {
+      onOpenReferral?.();
+      toast({
+        title: "Поделитесь с друзьями!",
+        description: "Приглашайте и получайте бонусы",
+        variant: "default",
+      });
+    }
+  };
+
+  // Определение темы
+  const [isDark, setIsDark] = useState(false);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      setIsDark(mediaQuery.matches);
+      
+      const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
+      mediaQuery.addEventListener('change', handler);
+      return () => mediaQuery.removeEventListener('change', handler);
+    }
+  }, []);
+
+  // Оптимизированные анимационные конфиги
+  const maxPowerAnimations = useMemo(() => ({
+    container: {
+      rotate: [0, -5, 5, -3, 3, 0],
+      transition: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+    },
+    background: {
+      scale: [1, 1.8, 1.4],
+      opacity: [0.6, 1, 0.8],
+      transition: { duration: 1 }
+    },
+    statusIcon: {
+      scale: [1, 1.3, 1],
+      rotate: [0, 180, 360],
+      boxShadow: ['0 0 0px #ff00ff', '0 0 30px #ff00ff', '0 0 0px #00ffff'],
+      transition: { duration: 1, repeat: Infinity }
+    }
+  }), []);
+
+  return (
+    <motion.div
+      ref={containerRef}
+      className="fixed top-24 right-6 z-50 select-none"
+      style={{ opacity }}
+      role="progressbar"
+      aria-valuenow={completionPercentage}
+      aria-valuemin={0}
+      aria-valuemax={200}
+      aria-label={`Прогресс использования: ${completionPercentage}%`}
+      initial={{ opacity: 0, scale: 0.8, y: 20 }}
+      animate={isInView ? { 
+        opacity: 1, 
+        scale: 1, 
+        y: 0,
+        ...(isMaxPower && maxPowerAnimations.container)
+      } : {}}
+      transition={{ duration: 0.5, type: "spring" }}
+    >
+      {/* ОПТИМИЗИРОВАННЫЕ ЭФФЕКТЫ ДЛЯ 200% */}
+      {isMaxPower && (
+        <>
+          {/* Основное энергетическое кольцо */}
+          <motion.div
+            className="absolute -inset-8 rounded-full z-0"
+            animate={maxPowerAnimations.background}
+            transition={{ duration: 2, repeat: Infinity }}
+            style={{
+              background: "conic-gradient(from 0deg, #ff0080, #8000ff, #0080ff, #00ff80, #ff0080)",
+              filter: "blur(20px)",
+            }}
+          />
+          
+          {/* ВЗРЫВ ЧАСТИЦ - ОПТИМИЗИРОВАННЫЙ */}
+          <div className="absolute -inset-10 z-5 pointer-events-none">
+            {particlesArray.map((_, i) => (
+              <motion.div
+                key={`particle-${i}`}
+                className="absolute w-1.5 h-1.5 rounded-full"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  background: `hsl(${i * 24}, 100%, 60%)`,
+                  boxShadow: `0 0 15px hsl(${i * 24}, 100%, 60%)`,
+                }}
+                initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                animate={{
+                  scale: [0, 1, 0],
+                  x: [0, Math.cos(i * 0.25) * 100],
+                  y: [0, Math.sin(i * 0.25) * 100],
+                  opacity: [1, 1, 0],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: i * 0.07,
+                  ease: "easeOut"
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      <motion.button
+        className="relative block cursor-pointer group"
+        onClick={handleClick}
+        whileHover={{ scale: isMaxPower ? 1.08 : 1.05 }}
+        whileTap={{ scale: isMaxPower ? 0.92 : 0.95 }}
+        animate={isNearLimit ? {
+          x: [0, -1, 1, -1, 1, 0],
+          transition: { duration: 0.5, repeat: Infinity }
+        } : isMaxPower ? {
+          scale: [1, 1.03, 1],
+          transition: { duration: 0.4, repeat: Infinity }
+        } : {}}
+        transition={{ type: "spring", stiffness: 400, damping: 20 }}
+      >
+        {/* Основной фон */}
+        <motion.div
+          className="absolute -inset-6 rounded-full"
+          animate={{ 
+            scale: isMaxPower ? [1, 1.6, 1.3] : isOverPlan ? [1, 1.3, 1] : [1, 1.25, 1], 
+            opacity: isMaxPower ? [0.6, 0.9, 0.7] : isOverPlan ? [0.4, 0.7, 0.4] : [0.25, 0.45, 0.25],
+          }}
+          transition={{ 
+            duration: isMaxPower ? 1.5 : isOverPlan ? 3 : 4,
+          }}
+          style={{
+            background: isMaxPower 
+              ? "radial-gradient(circle at center, #ff00ff 0%, #00ffff 25%, #ffff00 50%, transparent 80%)"
+              : isOverPlan 
+              ? "radial-gradient(circle at center, #fbbf24 0%, #f59e0b 40%, transparent 75%)"
+              : "radial-gradient(circle at center, #6366f1 0%, #8b5cf6 40%, transparent 75%)",
+            filter: "blur(20px)",
+          }}
+        />
+
+        {/* Индикатор статуса */}
+        <motion.div
+          className="absolute -top-2 -right-2 z-10"
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ 
+            scale: 1, 
+            rotate: 0,
+            y: isMaxPower ? [0, -8, 0] : 0
+          }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 500, 
+            delay: 0.2,
+            y: { duration: 0.6, repeat: isMaxPower ? Infinity : 0 }
+          }}
+        >
+          <motion.div
+            className={`w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white ${
+              !hasEmail 
+                ? "bg-gradient-to-r from-yellow-400 to-orange-500" 
+                : "bg-gradient-to-r from-green-400 to-blue-500"
+            }`}
+            whileHover={{ scale: 1.1 }}
+            animate={isMaxPower ? maxPowerAnimations.statusIcon : {
+              scale: [1, 1.1, 1],
+              rotate: !hasEmail ? [0, 5, 0] : [0, -5, 0],
+              transition: { duration: 2, repeat: Infinity, repeatDelay: 3 }
+            }}
+          >
+            <motion.span 
+              className="text-xs font-bold text-white"
+              animate={isMaxPower ? { scale: [1, 1.3, 1] } : {}}
+              transition={{ duration: 0.6, repeat: isMaxPower ? Infinity : 0 }}
+            >
+              {!hasEmail ? "🎁" : "👥"}
+            </motion.span>
+          </motion.div>
+        </motion.div>
+
+        {/* Основная капсула */}
+        <div className="relative w-8 h-16">
+          <div className="absolute inset-0 rounded-full overflow-hidden">
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                WebkitMaskImage: "radial-gradient(circle at center, black 68%, transparent 100%)",
+                maskImage: "radial-gradient(circle at center, black 68%, transparent 100%)",
+              }}
+            >
+              {/* Стекло капсулы */}
+              <motion.div 
+                className="absolute inset-0 rounded-full bg-white/8 backdrop-blur-xl border group-hover:border-white/50 transition-all duration-300"
+                animate={{
+                  borderColor: isMaxPower 
+                    ? ['rgba(255,0,255,0.6)', 'rgba(0,255,255,0.6)', 'rgba(255,0,255,0.6)']
+                    : ['rgba(255,255,255,0.35)'],
+                }}
+                transition={{
+                  duration: isMaxPower ? 1.5 : 0.3,
+                  repeat: isMaxPower ? Infinity : 0
+                }}
+              />
+
+              {/* Малахитовая жидкость */}
+              <motion.div
+                className="absolute bottom-0 left-0 right-0 origin-bottom overflow-hidden rounded-full z-10"
+                style={{ height: `${baseHeight}%` }}
+                initial={{ height: 0 }}
+                animate={{ height: `${baseHeight}%` }}
+                transition={{ type: "spring", stiffness: 120, damping: 22 }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0D9488] via-[#14B8A6] to-[#5EEAD4]/90" />
+                
+                {!isOverPlan && baseHeight > 0 && (
+                  <div className="absolute inset-x-1 top-0 pointer-events-none" style={{ height: "20px", transform: "translateY(-50%)" }}>
+                    <div
+                      className="w-full h-full"
+                      style={{
+                        background: `radial-gradient(ellipse at center top, rgba(255,255,255,0.8) 0%, rgba(180,255,240,0.5) 50%, transparent 100%)`,
+                        clipPath: "ellipse(100% 60% at 50% 0%)",
+                        filter: "blur(1.5px)",
+                      }}
+                    />
+                  </div>
+                )}
+              </motion.div>
+
+              {/* Магическая жидкость */}
+              {isOverPlan && (
+                <motion.div
+                  className="absolute bottom-0 left-0 right-0 origin-bottom overflow-hidden rounded-full z-20"
+                  style={{ 
+                    height: `${magicHeight}%`,
+                    mixBlendMode: isMaxPower ? 'difference' : 'screen'
+                  }}
+                  initial={{ height: 0 }}
+                  animate={{ height: `${magicHeight}%` }}
+                  transition={{ type: "spring", stiffness: 80, damping: 15, delay: 0.1 }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-purple-500 via-fuchsia-500 to-pink-500" />
+                  
+                  {/* Оптимизированные пузырьки */}
+                  <div className="absolute inset-0">
+                    {bubblesArray.map((_, i) => (
+                      <motion.div
+                        key={`bubble-${i}`}
+                        className="absolute rounded-full"
+                        style={{
+                          width: isMaxPower ? 4 : 2,
+                          height: isMaxPower ? 4 : 2,
+                          left: `${20 + i * (isMaxPower ? 10 : 20)}%`,
+                          bottom: '15%',
+                          background: isMaxPower 
+                            ? `radial-gradient(circle, rgba(255,255,255,0.9), hsl(${i * 45}, 100%, 60%) 50%)`
+                            : "radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,215,0,0.8) 50%)",
+                          boxShadow: isMaxPower 
+                            ? `0 0 15px hsl(${i * 45}, 100%, 60%)`
+                            : "0 0 8px rgba(255,215,0,0.7)",
+                        }}
+                        animate={{
+                          y: [0, -40 - (isMaxPower ? 20 : 0)],
+                          x: [0, Math.sin(i) * (isMaxPower ? 10 : 5), 0],
+                          opacity: [0, 1, 0],
+                          scale: [0.8, isMaxPower ? 1.5 : 1.2, 0.8],
+                        }}
+                        transition={{
+                          duration: isMaxPower ? 1.5 : 2,
+                          repeat: Infinity,
+                          delay: i * 0.2,
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Оптимизированные искры */}
+                  <div className="absolute inset-0">
+                    {sparksArray.map((_, i) => (
+                      <motion.div
+                        key={`spark-${i}`}
+                        className="absolute rounded-full"
+                        style={{
+                          width: 0.5,
+                          height: 0.5,
+                          left: `${25 + i * (isMaxPower ? 8 : 15)}%`,
+                          bottom: '25%',
+                          background: "radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,215,0,0.9) 60%)",
+                          boxShadow: "0 0 6px rgba(255,215,0,0.7)",
+                        }}
+                        animate={{
+                          y: [0, isMaxPower ? -50 : -30],
+                          opacity: [0, 1, 0],
+                          scale: [0, 1.2, 0],
+                        }}
+                        transition={{
+                          duration: 1.2,
+                          repeat: Infinity,
+                          delay: i * 0.15,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Блики */}
+              <div className="absolute inset-0 pointer-events-none z-30">
+                <div className="absolute left-1 top-2 w-3 h-8 bg-white/30 rounded-full blur-lg" />
+                <div className="absolute inset-0 rounded-full border border-white/20" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Процентный индикатор */}
+        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+          <motion.div 
+            className={`text-xs font-bold px-2 py-1 rounded-full border ${
+              isMaxPower 
+                ? 'text-white bg-gradient-to-r from-pink-500 to-purple-500 border-pink-300 shadow-lg' 
+                : isDark 
+                  ? 'text-gray-300 bg-gray-800/90 border-gray-600' 
+                  : 'text-gray-700 bg-white/90 border-gray-200'
+            }`}
+            animate={isMaxPower ? {
+              scale: [1, 1.1, 1],
+            } : {}}
+            transition={{ duration: 0.8, repeat: isMaxPower ? Infinity : 0 }}
+          >
+            {Math.round(completionPercentage)}%
+            {isOverPlan && <span className="ml-1">{isMaxPower ? '💥' : '✨'}</span>}
+          </motion.div>
+        </div>
+
+        {/* Упрощенный тултип */}
+        <div className="absolute right-full top-1/2 transform -translate-y-1/2 mr-2 opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 bg-gray-900 text-white text-xs py-1 px-2 rounded border border-gray-700">
+          <div className="font-semibold">
+            {!hasEmail ? "🎁 Бонусы" : "👥 Пригласить"}
+          </div>
+          <div className="absolute top-1/2 right-0 transform translate-x-1 -translate-y-1/2 w-1 h-1 bg-gray-900 rotate-45 border-r border-b border-gray-700" />
+        </div>
+      </motion.button>
+    </motion.div>
+  );
+};
