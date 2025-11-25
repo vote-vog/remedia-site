@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import { 
   X, Sparkles, Heart, Zap, Users, Target, Clock, Brain, Shield, Rocket, 
-  Cpu, Activity, Dna, Network, Globe 
+  Cpu, Activity, Dna, Network, Globe, Trophy, Star, Award
 } from 'lucide-react';
 
 interface EasterEgg {
@@ -27,50 +27,80 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
   const [visibleEgg, setVisibleEgg] = useState<string | null>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [hasClickedProgress, setHasClickedProgress] = useState(false);
+  const [viewedEggs, setViewedEggs] = useState<Set<string>>(new Set());
+  const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+
+  // Восстанавливаем состояние из sessionStorage при загрузке
+  useEffect(() => {
+    const savedViewedEggs = sessionStorage.getItem('easterEggs_viewed');
+    if (savedViewedEggs) {
+      try {
+        const parsed = JSON.parse(savedViewedEggs);
+        setViewedEggs(new Set(parsed));
+      } catch (e) {
+        console.log('No saved easter eggs state');
+      }
+    }
+  }, []);
+
+  // Сохраняем состояние в sessionStorage при изменении
+  useEffect(() => {
+    if (viewedEggs.size > 0) {
+      sessionStorage.setItem('easterEggs_viewed', JSON.stringify(Array.from(viewedEggs)));
+    }
+  }, [viewedEggs]);
+
+  // Функция для проверки, можно ли активировать яйцо
+  const canActivateEgg = useCallback((eggId: string) => {
+    return !viewedEggs.has(eggId);
+  }, [viewedEggs]);
 
   // Отслеживаем первый скролл
   useEffect(() => {
     const handleFirstScroll = () => {
       if (!hasScrolled) {
         setHasScrolled(true);
-        // Активируем первую капсулу при первом скролле
         setTimeout(() => {
-          setActiveEggs(prev => new Set(prev).add('for-everyone'));
+          if (canActivateEgg('for-everyone')) {
+            setActiveEggs(prev => new Set(prev).add('for-everyone'));
+          }
         }, 1000);
       }
     };
 
     window.addEventListener('scroll', handleFirstScroll, { passive: true, once: true });
     return () => window.removeEventListener('scroll', handleFirstScroll);
-  }, [hasScrolled]);
+  }, [hasScrolled, canActivateEgg]);
 
   // Отслеживаем клик по прогресс-бару
   useEffect(() => {
     if (progressBarClicked && !hasClickedProgress) {
       setHasClickedProgress(true);
-      // Активируем капсулу про токены после клика на прогресс-бар
       setTimeout(() => {
-        setActiveEggs(prev => new Set(prev).add('token-economy'));
+        if (canActivateEgg('token-economy')) {
+          setActiveEggs(prev => new Set(prev).add('token-economy'));
+        }
       }, 500);
     }
-  }, [progressBarClicked, hasClickedProgress]);
+  }, [progressBarClicked, hasClickedProgress, canActivateEgg]);
 
   // Отслеживаем любой клик по кнопкам
   useEffect(() => {
     if (anyButtonClicked) {
-      // Активируем капсулу про основателя после любого клика
       setTimeout(() => {
-        setActiveEggs(prev => new Set(prev).add('founder-story'));
+        if (canActivateEgg('founder-story')) {
+          setActiveEggs(prev => new Set(prev).add('founder-story'));
+        }
       }, 800);
     }
-  }, [anyButtonClicked]);
+  }, [anyButtonClicked, canActivateEgg]);
 
   const eggs: EasterEgg[] = [
     {
       id: 'for-everyone',
       title: 'Для всех 🎯',
       content: 'Вы здоровы или не болеете ревматоидным артритом? Ничего страшного! Мы начинаем с фокуса на хронические заболевания, но планируем помочь абсолютно всем в управлении здоровьем.',
-      icon: <Globe className="w-5 h-5 text-red-500" />,
+      icon: <Globe className="w-5 h-5" />,
       position: { x: 85, y: 25 },
       trigger: 'first-scroll',
       condition: () => hasScrolled
@@ -79,16 +109,16 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
       id: 'mission-control',
       title: 'Контроль, а не трекер 🎯',
       content: 'Мы создаем не "еще один трекер симптомов", а инструмент, который возвращает чувство контроля над собственной жизнью при хроническом заболевании.',
-      icon: <Target className="w-5 h-5 text-purple-500" />,
+      icon: <Target className="w-5 h-5" />,
       position: { x: 15, y: 35 },
       trigger: 'time-delay',
-      delay: 15000 // 15 секунд
+      delay: 15000
     },
     {
       id: 'token-economy',
       title: 'Токен-экономика 🪙',
       content: 'Знаете ли вы, что рынок медицинских данных оценивается в $5 млрд, но пациенты, ежедневно предоставляющие ценнейшую информацию, не получают за это ничего? Мы меняем эту парадигму: сначала внутри приложения, потом по всему миру!',
-      icon: <Zap className="w-5 h-5 text-yellow-500" />,
+      icon: <Zap className="w-5 h-5" />,
       position: { x: 75, y: 65 },
       trigger: 'progress-click',
       condition: () => hasClickedProgress
@@ -97,7 +127,7 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
       id: 'founder-story',
       title: 'История основателя 💫',
       content: 'Основатель потратил 6 месяцев на 30+ интервью с пациентами и врачами и провёл около тысячи часов за компьютером, прежде чем объявить об MVP, которое создано без внешних инвестиций!',
-      icon: <Rocket className="w-5 h-5 text-blue-500" />,
+      icon: <Rocket className="w-5 h-5" />,
       position: { x: 25, y: 75 },
       trigger: 'first-click'
     },
@@ -105,55 +135,55 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
       id: 'digital-twin',
       title: 'Цифровой Двойник 🧠',
       content: 'На цифровом двойнике за считанные дни можно будет тестировать новые лекарства, на что сейчас уходит десятки лет. От дневника симптомов к предиктивной медицине будущего!',
-      icon: <Brain className="w-5 h-5 text-green-500" />,
+      icon: <Brain className="w-5 h-5" />,
       position: { x: 40, y: 20 },
       trigger: 'time-delay',
-      delay: 30000 // 30 секунд
+      delay: 30000
     },
     {
       id: 'privacy-first',
       title: 'Конфиденциальность 🛡️',
       content: 'Собранные в приложении данные анонимизируются и используются для движения науки и здравоохранения вперёд. Вы закладываете фундамент для здоровья следующих поколений!',
-      icon: <Shield className="w-5 h-5 text-cyan-500" />,
+      icon: <Shield className="w-5 h-5" />,
       position: { x: 60, y: 50 },
       trigger: 'time-delay',
-      delay: 45000 // 45 секунд
+      delay: 45000
     },
     {
       id: 'patient-power',
       title: 'Сила пациентов 💪',
       content: 'Вместо того чтобы быть пассивными наблюдателями, пациенты становятся активными участниками исследований. Ваши данные - ваш голос в медицине будущего!',
-      icon: <Activity className="w-5 h-5 text-orange-500" />,
+      icon: <Activity className="w-5 h-5" />,
       position: { x: 20, y: 15 },
       trigger: 'time-delay',
-      delay: 60000 // 60 секунд
+      delay: 60000
     },
     {
       id: 'ai-revolution',
       title: 'AI-революция в медицине 🤖',
       content: 'Только 3% медицинских данных сегодня используется для AI-исследований. Мы открываем доступ к остальным 97%, ускоряя разработку лекарств в 10 раз!',
-      icon: <Cpu className="w-5 h-5 text-indigo-500" />,
+      icon: <Cpu className="w-5 h-5" />,
       position: { x: 80, y: 40 },
       trigger: 'time-delay',
-      delay: 75000 // 75 секунд
+      delay: 75000
     },
     {
       id: 'personalized-medicine',
       title: 'Персонализированная медицина 🧬',
       content: 'Скоро лечение будет подбираться не по усредненным протоколам, где пациент не имеют уникальных особенностей, а на основе ваших уникальных данных. Мы строим этот будущий уже сегодня!',
-      icon: <Dna className="w-5 h-5 text-pink-500" />,
+      icon: <Dna className="w-5 h-5" />,
       position: { x: 10, y: 80 },
       trigger: 'time-delay',
-      delay: 90000 // 90 секунд
+      delay: 90000
     },
     {
       id: 'health-ecosystem',
       title: 'Экосистема здоровья 🏥',
       content: 'Мы строим не приложение, а целую экосистему: пациенты + врачи + исследователи + фармакомпании. Все вместе мы сильнее!',
-      icon: <Network className="w-5 h-5 text-violet-500" />,
+      icon: <Network className="w-5 h-5" />,
       position: { x: 90, y: 70 },
       trigger: 'time-delay',
-      delay: 105000 // 105 секунд
+      delay: 105000
     }
   ];
 
@@ -162,7 +192,7 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     const timeouts: NodeJS.Timeout[] = [];
     
     eggs.forEach(egg => {
-      if (egg.trigger === 'time-delay' && !activeEggs.has(egg.id)) {
+      if (egg.trigger === 'time-delay' && !activeEggs.has(egg.id) && canActivateEgg(egg.id)) {
         const timeout = setTimeout(() => {
           console.log(`🎯 Activating easter egg: ${egg.id}`);
           setActiveEggs(prev => new Set(prev).add(egg.id));
@@ -175,27 +205,46 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     return () => {
       timeouts.forEach(timeout => clearTimeout(timeout));
     };
-  }, [activeEggs]);
+  }, [activeEggs, canActivateEgg]);
+
+  // Проверяем, было ли закрыто последнее яйцо
+  const checkAllEggsCompleted = useCallback((newViewedEggs: Set<string>) => {
+    const allEggIds = eggs.map(egg => egg.id);
+    const allCompleted = allEggIds.every(id => newViewedEggs.has(id));
+    
+    if (allCompleted && newViewedEggs.size === allEggIds.length) {
+      console.log('🎉 Все пасхалки собраны!');
+      setTimeout(() => {
+        setShowCompletionPopup(true);
+      }, 1000);
+    }
+  }, [eggs]);
 
   const handleEggClick = useCallback((eggId: string) => {
-    if (!activeEggs.has(eggId)) {
+    if (!activeEggs.has(eggId) && canActivateEgg(eggId)) {
       setActiveEggs(prev => new Set(prev).add(eggId));
     }
     setVisibleEgg(eggId);
-  }, [activeEggs]);
+  }, [activeEggs, canActivateEgg]);
 
   const closeEgg = useCallback((eggId: string) => {
     setVisibleEgg(null);
-    // Убираем капсулу после просмотра
+    
+    setViewedEggs(prev => {
+      const newSet = new Set(prev).add(eggId);
+      checkAllEggsCompleted(newSet);
+      return newSet;
+    });
+    
     setTimeout(() => {
       setActiveEggs(prev => {
         const newSet = new Set(prev);
         newSet.delete(eggId);
-        console.log(`🎯 Removed easter egg: ${eggId}`);
+        console.log(`🎯 Removed easter egg: ${eggId} (viewed)`);
         return newSet;
       });
     }, 300);
-  }, []);
+  }, [checkAllEggsCompleted]);
 
   const closeCurrentEgg = useCallback(() => {
     if (visibleEgg) {
@@ -203,37 +252,41 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     }
   }, [visibleEgg, closeEgg]);
 
+  const handleCloseCompletionPopup = useCallback(() => {
+    setShowCompletionPopup(false);
+  }, []);
+
   // Функция для получения цвета по ID
   const getEggColor = (eggId: string) => {
     const colors: { [key: string]: string } = {
-      'for-everyone': 'rgba(239, 68, 68, 0.8)',
-      'mission-control': 'rgba(147, 51, 234, 0.8)',
-      'token-economy': 'rgba(234, 179, 8, 0.8)',
-      'founder-story': 'rgba(59, 130, 246, 0.8)',
-      'digital-twin': 'rgba(34, 197, 94, 0.8)',
-      'privacy-first': 'rgba(6, 182, 212, 0.8)',
-      'patient-power': 'rgba(249, 115, 22, 0.8)',
-      'ai-revolution': 'rgba(99, 102, 241, 0.8)',
-      'personalized-medicine': 'rgba(236, 72, 153, 0.8)',
-      'health-ecosystem': 'rgba(139, 92, 246, 0.8)'
+      'for-everyone': 'rgba(16, 185, 129, 0.8)', // Изумрудный
+      'mission-control': 'rgba(6, 182, 212, 0.8)', // Бирюзовый
+      'token-economy': 'rgba(14, 165, 233, 0.8)', // Голубой
+      'founder-story': 'rgba(59, 130, 246, 0.8)', // Синий
+      'digital-twin': 'rgba(16, 185, 129, 0.8)', // Изумрудный
+      'privacy-first': 'rgba(6, 182, 212, 0.8)', // Бирюзовый
+      'patient-power': 'rgba(14, 165, 233, 0.8)', // Голубой
+      'ai-revolution': 'rgba(59, 130, 246, 0.8)', // Синий
+      'personalized-medicine': 'rgba(16, 185, 129, 0.8)', // Изумрудный
+      'health-ecosystem': 'rgba(6, 182, 212, 0.8)' // Бирюзовый
     };
-    return colors[eggId] || 'rgba(139, 92, 246, 0.8)';
+    return colors[eggId] || 'rgba(6, 182, 212, 0.8)';
   };
 
   const getEggSize = (eggId: string) => {
-    // Первые капсулы делаем более заметными
     const priorityEggs = ['for-everyone', 'mission-control', 'token-economy', 'founder-story'];
     return priorityEggs.includes(eggId) ? 'w-14 h-14' : 'w-12 h-12';
   };
 
   console.log('🎯 Active easter eggs:', Array.from(activeEggs));
+  console.log('👀 Viewed easter eggs:', Array.from(viewedEggs));
 
   return (
     <>
       {/* Плавающие капсулки */}
       {eggs.map(egg => (
         <AnimatePresence key={egg.id}>
-          {activeEggs.has(egg.id) && (
+          {activeEggs.has(egg.id) && canActivateEgg(egg.id) && (
             <motion.button
               initial={{ scale: 0, opacity: 0, rotate: -180 }}
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -265,7 +318,7 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
                 }}
               />
               
-              {/* Основная капсула - стиль как у прогресс-бара */}
+              {/* Основная капсула */}
               <motion.div
                 className={`relative ${getEggSize(egg.id)} bg-white/95 backdrop-blur-xl rounded-2xl border-2 border-white/60 shadow-2xl flex items-center justify-center`}
                 whileHover={{
@@ -276,11 +329,11 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
                   background: 'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.8))',
                 }}
               >
-                {/* Стеклянный эффект как у прогресс-бара */}
+                {/* Стеклянный эффект */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/40 via-transparent to-white/10 mix-blend-overlay" />
                 
                 {/* Иконка */}
-                <div className="relative z-10">
+                <div className="relative z-10" style={{ color: getEggColor(egg.id).replace('0.8', '1') }}>
                   {egg.icon}
                 </div>
 
@@ -298,7 +351,7 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
                   }}
                 />
 
-                {/* Блики как у прогресс-бара */}
+                {/* Блики */}
                 <div className="absolute inset-0 rounded-2xl pointer-events-none">
                   <div className="absolute left-1 top-1 w-6 h-8 bg-white/30 rounded-full blur-lg" />
                   <div className="absolute right-1 top-2 w-4 h-4 bg-white/50 rounded-full blur-md" />
@@ -319,7 +372,7 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
         </AnimatePresence>
       ))}
 
-      {/* Попап с контентом */}
+      {/* Попап с контентом яйца */}
       <AnimatePresence>
         {visibleEgg && (
           <>
@@ -393,6 +446,180 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
                     </motion.div>
                   </div>
                 ))}
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Вау-попап при сборе всех яиц */}
+      <AnimatePresence>
+        {showCompletionPopup && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-gradient-to-br from-teal-500/20 via-cyan-500/20 to-blue-500/20 z-50 backdrop-blur-xl"
+              onClick={handleCloseCompletionPopup}
+            />
+            
+            {/* Конфетти-эффект */}
+            <div className="fixed inset-0 z-50 pointer-events-none">
+              {[...Array(50)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute text-cyan-400 text-xl"
+                  initial={{ 
+                    x: Math.random() * window.innerWidth,
+                    y: -50,
+                    rotate: 0,
+                    scale: 0
+                  }}
+                  animate={{
+                    y: window.innerHeight + 100,
+                    rotate: 360,
+                    scale: [0, 1, 0.5, 0],
+                    opacity: [0, 1, 1, 0]
+                  }}
+                  transition={{
+                    duration: 2 + Math.random() * 2,
+                    delay: Math.random() * 0.5,
+                    ease: "easeOut"
+                  }}
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                  }}
+                >
+                  {Math.random() > 0.5 ? '✨' : '💎'}
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ scale: 0, opacity: 0, rotateY: 180 }}
+                animate={{ scale: 1, opacity: 1, rotateY: 0 }}
+                exit={{ scale: 0, opacity: 0, rotateY: -180 }}
+                transition={{ type: "spring", damping: 15, stiffness: 200 }}
+                className="bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-500 p-1 rounded-3xl shadow-2xl max-w-md w-full pointer-events-auto"
+              >
+                <div className="bg-white rounded-2xl p-8 text-center relative overflow-hidden">
+                  {/* Блики */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-white/10 mix-blend-overlay" />
+                  
+                  {/* Анимированный фон */}
+                  <motion.div
+                    className="absolute inset-0 opacity-10"
+                    animate={{
+                      background: [
+                        'radial-gradient(circle at 20% 80%, #0d9488 0%, transparent 50%)',
+                        'radial-gradient(circle at 80% 20%, #06b6d4 0%, transparent 50%)',
+                        'radial-gradient(circle at 40% 40%, #3b82f6 0%, transparent 50%)',
+                        'radial-gradient(circle at 20% 80%, #0d9488 0%, transparent 50%)',
+                      ],
+                    }}
+                    transition={{ duration: 5, repeat: Infinity }}
+                  />
+
+                  <div className="relative z-10">
+                    {/* Иконки наград */}
+                    <div className="flex justify-center gap-4 mb-6">
+                      <motion.div
+                        initial={{ scale: 0, y: 50 }}
+                        animate={{ scale: 1, y: 0 }}
+                        transition={{ delay: 0.2, type: "spring" }}
+                      >
+                        <Trophy className="w-16 h-16 text-teal-500" fill="currentColor" />
+                      </motion.div>
+                      <motion.div
+                        initial={{ scale: 0, y: 50 }}
+                        animate={{ scale: 1, y: 0 }}
+                        transition={{ delay: 0.4, type: "spring" }}
+                      >
+                        <Award className="w-16 h-16 text-cyan-500" fill="currentColor" />
+                      </motion.div>
+                      <motion.div
+                        initial={{ scale: 0, y: 50 }}
+                        animate={{ scale: 1, y: 0 }}
+                        transition={{ delay: 0.6, type: "spring" }}
+                      >
+                        <Star className="w-16 h-16 text-blue-500" fill="currentColor" />
+                      </motion.div>
+                    </div>
+
+                    {/* Заголовок */}
+                    <motion.h3
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.8 }}
+                      className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent mb-4"
+                    >
+                      Вау! Поздравляем! 🎉
+                    </motion.h3>
+
+                    {/* Текст */}
+                    <motion.p
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1.0 }}
+                      className="text-gray-700 text-lg leading-relaxed mb-6"
+                    >
+                      <strong>Ваше упорство в изучении Remedia достойно всяких похвал!</strong><br />
+                      Вы многого добьетесь в исследовании своего организма с Remedia!
+                    </motion.p>
+
+                    {/* P.S. */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1.2 }}
+                      className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl p-4 border-2 border-teal-200/50 mb-6"
+                    >
+                      <p className="text-sm text-teal-800 font-medium">
+                        P.S.: а Вы уже пробовали заполнить капсулу до 200%? 😉
+                      </p>
+                    </motion.div>
+
+                    {/* Кнопка закрытия */}
+                    <motion.button
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1.4 }}
+                      onClick={handleCloseCompletionPopup}
+                      className="bg-gradient-to-r from-teal-500 to-blue-500 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                    >
+                      Продолжить исследование! 🚀
+                    </motion.button>
+                  </div>
+
+                  {/* Плавающие частицы */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {[...Array(8)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="absolute text-cyan-400"
+                        animate={{
+                          y: [0, -30, 0],
+                          x: [0, Math.sin(i) * 20, 0],
+                          rotate: [0, 180, 360],
+                          scale: [0.5, 1, 0.5],
+                        }}
+                        transition={{
+                          duration: 3 + i,
+                          repeat: Infinity,
+                          delay: i * 0.5,
+                        }}
+                        style={{
+                          left: `${20 + i * 10}%`,
+                          top: `${10 + (i % 3) * 30}%`,
+                        }}
+                      >
+                        {i % 2 === 0 ? '✦' : '❖'}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
               </motion.div>
             </div>
           </>
