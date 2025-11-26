@@ -1,96 +1,121 @@
 // src/hooks/useEngagementTracker.ts
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useProgress } from './useProgress';
 
-// 🔥 TELEGRAM CONFIG ДЛЯ ВОВЛЕЧЕННОСТИ
-const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
+// 🔥 ДОБАВЛЯЕМ ИНТЕРФЕЙСЫ ДЛЯ РАСШИРЕННОГО ТРЕКИНГА
+interface EngagementSession {
+  sessionStart: number;
+  actions: string[];
+  maxScore: number;
+}
 
 interface EngagementData {
   progress: number;
-  eggsCount?: number;
+  eggsCount: number;
   completedDemo: boolean;
   completedCalculator: boolean;
   usedCredit: boolean;
   referrals: number;
-  email?: string;
-  lastAction?: string;
+  email: string | null;
+  lastAction: string;
+  sessionDuration: number;
+  totalActions: number;
 }
+
+// 🎯 ФУНКЦИЯ РАСЧЕТА БАЛЛА ВОВЛЕЧЕННОСТИ (ПЕРЕМЕЩЕНА ВВЕРХ)
+const calculateEngagementScore = (engagementData: EngagementData): number => {
+  let score = 0;
+  
+  // Прогресс по сайту (макс 30 баллов)
+  score += engagementData.progress * 0.3;
+  
+  // Собраны пасхалки (макс 20 баллов)
+  score += Math.min(engagementData.eggsCount * 2, 20);
+  
+  // Завершены ключевые активности (макс 30 баллов)
+  if (engagementData.completedDemo) score += 15;
+  if (engagementData.completedCalculator) score += 15;
+  
+  // Использован кредит (10 баллов)
+  if (engagementData.usedCredit) score += 10;
+  
+  // Рефералы (макс 10 баллов)
+  score += Math.min(engagementData.referrals * 5, 10);
+  
+  // Длительность сессии (макс 10 баллов)
+  score += Math.min(engagementData.sessionDuration / 60000, 10);
+  
+  return Math.min(score, 100);
+};
+
+// 🎯 ФУНКЦИЯ ОПРЕДЕЛЕНИЯ УРОВНЯ ВОВЛЕЧЕННОСТИ
+const getEngagementLevel = (score: number): string => {
+  if (score >= 80) return 'expert';
+  if (score >= 60) return 'advanced';
+  if (score >= 40) return 'intermediate';
+  if (score >= 20) return 'beginner';
+  return 'newcomer';
+};
+
+// 🔥 ОТПРАВКА В TELEGRAM ДЛЯ КРИТИЧЕСКИХ СОБЫТИЙ
+const sendEngagementAlert = async (engagementData: any) => {
+  const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+  const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
+  
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+
+  const message = `🎯 ENGAGEMENT ALERT
+📊 Score: ${engagementData.score}/100
+📈 Level: ${engagementData.level}
+🏆 Progress: ${engagementData.progress}%
+🥚 Eggs: ${engagementData.eggsCount}
+⏰ Session: ${Math.round(engagementData.sessionDuration / 60000)}min
+🔄 Actions: ${engagementData.totalActions}
+⏰ ${new Date().toLocaleString('ru-RU')}`;
+
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    });
+  } catch (error) {
+    console.error('Ошибка отправки в Telegram:', error);
+  }
+};
 
 export const useEngagementTracker = () => {
   const { progress, completionPercentage } = useProgress();
+  
+  // 🔥 СЕССИЯ ПОЛЬЗОВАТЕЛЯ ДЛЯ АНАЛИТИКИ ПОВЕДЕНИЯ
+  const sessionRef = useRef<EngagementSession>({
+    sessionStart: Date.now(),
+    actions: [],
+    maxScore: 0
+  });
 
-  // 🔥 ФУНКЦИЯ РАСЧЕТА ENGAGEMENT SCORE
-  const calculateEngagementScore = useCallback((data: EngagementData) => {
-    let score = 0;
-    
-    // Прогресс-бар (0-2 балла)
-    score += Math.min(data.progress / 100, 2);
-    
-    // Пасхалки (+0.2 за каждую)
-    score += (data.eggsCount || 0) * 0.2;
-    
-    // Демо-чат (+0.5)
-    if (data.completedDemo) score += 0.5;
-    
-    // Калькулятор (+0.5)
-    if (data.completedCalculator) score += 0.5;
-    
-    // Кредит в калькуляторе (+0.3)
-    if (data.usedCredit) score += 0.3;
-    
-    // Рефералы (+0.1 за каждого)
-    score += data.referrals * 0.1;
-    
-    return Math.round(score * 10) / 10; // Округление до 0.1
+  // 🔥 ОПРЕДЕЛЕНИЕ КРИТИЧЕСКИХ СОБЫТИЙ
+  const isCriticalAction = useCallback((action: string) => {
+    const criticalActions = [
+      'waitlist_signup',
+      'founder_conversion', 
+      'all_eggs_collected',
+      'calculator_credit_used',
+      'demo_completed',
+      'progress_200_achieved'
+    ];
+    return criticalActions.includes(action);
   }, []);
 
-  // 🔥 ОПРЕДЕЛЕНИЕ УРОВНЯ ВОВЛЕЧЕННОСТИ
-  const getEngagementLevel = useCallback((score: number) => {
-    if (score >= 3.5) return 'max_engagement';     // 45%+ конверсия
-    if (score >= 2.5) return 'high_engagement';    // 30%+ конверсия
-    if (score >= 1.5) return 'medium_engagement';  // 15%+ конверсия
-    if (score >= 0.5) return 'low_engagement';     // 5%+ конверсия
-    return 'no_engagement';                        // 1-2% конверсия
-  }, []);
-
-  // 🔥 ОТПРАВКА В TELEGRAM ДЛЯ ВЫСОКОЙ ВОВЛЕЧЕННОСТИ
-  const sendEngagementAlert = useCallback(async (data: EngagementData & { score: number; level: string }) => {
-    const message = `🔥 ВЫСОКАЯ ВОВЛЕЧЕННОСТЬ!
-
-👤 Пользователь: ${data.email || 'неизвестно'}
-🎯 Engagement Score: ${data.score} (${data.level})
-📊 Прогресс: ${data.progress}%
-🥚 Пасхалок: ${data.eggsCount || 0}
-🎮 Демо: ${data.completedDemo ? '✅' : '❌'}
-🧮 Калькулятор: ${data.completedCalculator ? '✅' : '❌'}
-💎 Кредит: ${data.usedCredit ? '✅' : '❌'}
-👥 Рефералов: ${data.referrals}
-📝 Последнее действие: ${data.lastAction || 'неизвестно'}
-
-⏰ ${new Date().toLocaleString('ru-RU')}`;
-
-    try {
-      const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: message,
-          parse_mode: 'HTML'
-        })
-      });
-
-      if (response.ok) {
-        console.log('📊 Уведомление о вовлеченности отправлено в Telegram');
-      }
-    } catch (error) {
-      console.error('Ошибка отправки уведомления о вовлеченности:', error);
-    }
-  }, []);
-
-  // 🔥 ОСНОВНАЯ ФУНКЦИЯ ОТСЛЕЖИВАНИЯ
+  // 🔥 ОБНОВЛЕННАЯ ФУНКЦИЯ ТРЕКИНГА С СЕССИЕЙ
   const trackEngagement = useCallback((action: string, additionalData?: any) => {
+    // Обновляем сессию
+    sessionRef.current.actions.push(action);
+    
     const engagementData: EngagementData = {
       progress: completionPercentage,
       eggsCount: additionalData?.eggsCount || 0,
@@ -99,13 +124,18 @@ export const useEngagementTracker = () => {
       usedCredit: progress.calculatorCredit || false,
       referrals: progress.referralEvents || 0,
       email: progress.userEmail,
-      lastAction: action
+      lastAction: action,
+      sessionDuration: Date.now() - sessionRef.current.sessionStart,
+      totalActions: sessionRef.current.actions.length
     };
 
     const engagementScore = calculateEngagementScore(engagementData);
     const engagementLevel = getEngagementLevel(engagementScore);
+    
+    // Обновляем максимальный score сессии
+    sessionRef.current.maxScore = Math.max(sessionRef.current.maxScore, engagementScore);
 
-    // 📊 Яндекс.Метрика - ОТСЛЕЖИВАНИЕ ВОВЛЕЧЕННОСТИ
+    // 📊 Яндекс.Метрика - РАСШИРЕННЫЕ ПАРАМЕТРЫ
     if (window.ym) {
       window.ym(12345678, 'params', {
         engagement_score: engagementScore,
@@ -116,38 +146,48 @@ export const useEngagementTracker = () => {
         engagement_calculator: engagementData.completedCalculator,
         engagement_credit: engagementData.usedCredit,
         engagement_referrals: engagementData.referrals,
+        
+        // 🔥 СЕССИОННЫЕ ДАННЫЕ
+        session_duration: engagementData.sessionDuration,
+        session_actions: engagementData.totalActions,
+        session_max_score: sessionRef.current.maxScore,
+        action_sequence: sessionRef.current.actions.join(' → '),
+        
         last_action: action,
         ...additionalData
       });
 
-      console.log(`📊 Engagement tracked: ${action} | Score: ${engagementScore} | Level: ${engagementLevel}`);
+      console.log(`📊 Engagement: ${action} | Score: ${engagementScore} | Level: ${engagementLevel} | Session: ${engagementData.totalActions} actions`);
     }
 
-    // 🔥 TELEGRAM УВЕДОМЛЕНИЯ ДЛЯ ВЫСОКОЙ ВОВЛЕЧЕННОСТИ
-    if (engagementScore >= 2.5) {
+    // 🔥 TELEGRAM ДЛЯ КРИТИЧЕСКИХ СОБЫТИЙ
+    if (engagementScore >= 25 || isCriticalAction(action)) {
       sendEngagementAlert({
         ...engagementData,
         score: engagementScore,
-        level: engagementLevel
+        level: engagementLevel,
+        session_actions: sessionRef.current.actions.length,
+        session_max_score: sessionRef.current.maxScore
       });
     }
 
     return {
       score: engagementScore,
       level: engagementLevel,
-      data: engagementData
+      data: engagementData,
+      session: sessionRef.current
     };
-  }, [completionPercentage, progress, calculateEngagementScore, getEngagementLevel, sendEngagementAlert]);
+  }, [completionPercentage, progress, isCriticalAction]);
 
-  // 🔥 АВТОМАТИЧЕСКОЕ ОТСЛЕЖИВАНИЕ ИЗМЕНЕНИЙ PROGRESS
-  const currentEngagement = useMemo(() => {
-    return trackEngagement('auto_track', { automatic: true });
+  // 🔥 ФУНКЦИЯ ДЛЯ ПАТЧЕРНОГО ТРЕКИНГА (если нужно добавить в существующие компоненты)
+  const patchTrackEngagement = useCallback((component: string, action: string, data?: any) => {
+    return trackEngagement(`${component}_${action}`, data);
   }, [trackEngagement]);
 
   return {
     trackEngagement,
-    currentEngagement,
-    calculateEngagementScore,
-    getEngagementLevel
+    patchTrackEngagement, // 🔥 ДЛЯ БЫСТРОГО ДОБАВЛЕНИЯ В СУЩЕСТВУЮЩИЙ КОД
+    currentEngagement: useMemo(() => trackEngagement('auto_track', { automatic: true }), [trackEngagement]),
+    getSession: () => sessionRef.current
   };
 };
