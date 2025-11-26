@@ -5,6 +5,7 @@ import {
   X, Sparkles, Heart, Zap, Users, Target, Clock, Brain, Shield, Rocket, 
   Cpu, Activity, Dna, Network, Globe, Trophy, Star, Award
 } from 'lucide-react';
+import { useEngagementTracker } from '../hooks/useEngagementTracker';
 
 interface EasterEgg {
   id: string;
@@ -23,12 +24,25 @@ interface EasterEggsProps {
 }
 
 export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = false }: EasterEggsProps) => {
+  const { trackEngagement } = useEngagementTracker();
   const [activeEggs, setActiveEggs] = useState<Set<string>>(new Set());
   const [visibleEgg, setVisibleEgg] = useState<string | null>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [hasClickedProgress, setHasClickedProgress] = useState(false);
   const [viewedEggs, setViewedEggs] = useState<Set<string>>(new Set());
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+
+  // Функция для отслеживания событий пасхалок
+  const trackEggEvent = useCallback((eggId: string, eggTitle: string, eventType: 'view' | 'collect_all') => {
+    // Существующий код трекинга (если есть)...
+    
+    // 🔥 ДОБАВЛЯЕМ ОТСЛЕЖИВАНИЕ ВОВЛЕЧЕННОСТИ
+    trackEngagement(`egg_${eventType}`, {
+      egg_id: eggId,
+      egg_title: eggTitle,
+      eggs_viewed_count: viewedEggs.size + 1
+    });
+  }, [trackEngagement, viewedEggs.size]);
 
   // Восстанавливаем состояние из sessionStorage при загрузке
   useEffect(() => {
@@ -214,18 +228,25 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     
     if (allCompleted && newViewedEggs.size === allEggIds.length) {
       console.log('🎉 Все пасхалки собраны!');
+      trackEggEvent('all', 'Все пасхалки', 'collect_all');
       setTimeout(() => {
         setShowCompletionPopup(true);
       }, 1000);
     }
-  }, [eggs]);
+  }, [eggs, trackEggEvent]);
 
   const handleEggClick = useCallback((eggId: string) => {
     if (!activeEggs.has(eggId) && canActivateEgg(eggId)) {
       setActiveEggs(prev => new Set(prev).add(eggId));
     }
     setVisibleEgg(eggId);
-  }, [activeEggs, canActivateEgg]);
+    
+    // Трекаем просмотр яйца
+    const egg = eggs.find(e => e.id === eggId);
+    if (egg) {
+      trackEggEvent(eggId, egg.title, 'view');
+    }
+  }, [activeEggs, canActivateEgg, eggs, trackEggEvent]);
 
   const closeEgg = useCallback((eggId: string) => {
     setVisibleEgg(null);

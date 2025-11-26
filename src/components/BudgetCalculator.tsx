@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChatMessage, Message } from "./ChatMessage";
 import { useProductActions } from "@/hooks/useProductActions";
 import { useToast } from "@/hooks/use-toast";
+import { useEngagementTracker } from "@/hooks/useEngagementTracker";
 
 const features = [
   { id: 1, name: "💬 Естественный диалог с ИИ", price: 100, type: "feature" },
@@ -32,6 +33,7 @@ const PRICES = {
 };
 
 export const BudgetCalculator = () => {
+  const { trackEngagement } = useEngagementTracker();
   const [messages, setMessages] = useState<Message[]>([]);
   const [budget, setBudget] = useState(500);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
@@ -199,6 +201,15 @@ export const BudgetCalculator = () => {
       console.log('📊 Яндекс.Метрика: кредит использован');
     }
 
+    // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ИСПОЛЬЗОВАНИЕ КРЕДИТА
+    trackEngagement('calculator_credit_used', {
+      option_id: optionId,
+      option_name: option?.name,
+      option_type: option?.type,
+      credit_amount: price,
+      remaining_credit: availableCredit - price
+    });
+
     // AI ответ
     setTimeout(() => {
       const remainingCredit = availableCredit - price;
@@ -258,6 +269,14 @@ export const BudgetCalculator = () => {
         role: "user", 
         content: `Убираю: ${option?.name}`
       }]);
+
+      // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - УДАЛЕНИЕ ОПЦИИ
+      trackEngagement('calculator_option_removed', {
+        option_id: optionId,
+        option_name: option?.name,
+        option_type: option?.type,
+        budget_remaining: budget + price
+      });
     } else if (budget >= price) {
       // Выбираем новую опцию
       setSelectedOptions(prev => [...prev, optionId]);
@@ -268,6 +287,16 @@ export const BudgetCalculator = () => {
         role: "user",
         content: `Выбираю: ${option?.name}`
       }]);
+
+      // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ВЫБОР ОПЦИИ
+      trackEngagement('calculator_option_selected', {
+        option_id: optionId,
+        option_name: option?.name,
+        option_type: option?.type,
+        option_price: price,
+        budget_remaining: budget - price,
+        total_selected: selectedOptions.length + 1
+      });
 
       // AI ответ
       setTimeout(() => {
@@ -293,12 +322,32 @@ export const BudgetCalculator = () => {
         role: "ai", 
         content: `Не хватает ${price - budget}₽. Выберите другую опцию или завершите сборку.`
       }]);
+
+      // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - НЕУДАЧНАЯ ПОПЫТКА
+      trackEngagement('calculator_option_failed', {
+        option_id: optionId,
+        option_name: option?.name,
+        option_type: option?.type,
+        option_price: price,
+        budget_remaining: budget,
+        missing_amount: price - budget
+      });
     }
   };
 
   // 🔥 ЗАВЕРШЕНИЕ С ПРОВЕРКОЙ КРЕДИТА
   const handleComplete = () => {
     const credit = calculateCredit();
+    
+    // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ КАЛЬКУЛЯТОРА
+    trackEngagement('calculator_completed', {
+      selected_features: selectedOptions.filter(id => id <= 6).length,
+      selected_temptations: selectedOptions.filter(id => id > 6).length,
+      budget_remaining: budget,
+      credit_eligible: credit > 0,
+      credit_used: creditUsed,
+      total_spent: 500 - budget
+    });
     
     // 🔥 Яндекс.Метрика - ЗАВЕРШЕНИЕ КАЛЬКУЛЯТОРА
     if (window.ym) {
@@ -324,6 +373,13 @@ export const BudgetCalculator = () => {
         content: "Готово!"
       }]);
 
+      // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ПРЕДЛОЖЕНИЕ КРЕДИТА
+      trackEngagement('calculator_credit_offered', {
+        credit_amount: credit,
+        selected_features: selectedOptions.filter(id => id <= 6).length,
+        selected_temptations: selectedOptions.filter(id => id > 6).length
+      });
+
       setTimeout(() => {
         setMessages(prev => [...prev, {
           id: `ai-credit-offer`,
@@ -345,6 +401,13 @@ export const BudgetCalculator = () => {
       role: "user", 
       content: "Пропускаю кредит"
     }]);
+
+    // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ПРОПУСК КРЕДИТА
+    trackEngagement('calculator_credit_skipped', {
+      credit_amount: availableCredit,
+      selected_features: selectedOptions.filter(id => id <= 6).length,
+      selected_temptations: selectedOptions.filter(id => id > 6).length
+    });
 
     // 🔥 ОТПРАВЛЯЕМ В TELEGRAM КЛЮЧЕВОЕ СОБЫТИЕ
     sendKeyEventToTelegram('ЗАВЕРШЕНИЕ (без кредита)');
@@ -404,6 +467,14 @@ export const BudgetCalculator = () => {
       console.log('📊 Яндекс.Метрика: отзыв отправлен');
     }
 
+    // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ОТПРАВКА ОТЗЫВА
+    trackEngagement('calculator_feedback_submitted', {
+      feedback_length: feedbackText.length,
+      selected_features: selectedOptions.filter(id => id <= 6).length,
+      selected_temptations: selectedOptions.filter(id => id > 6).length,
+      credit_used: creditUsed
+    });
+
     // 🔥 ОТПРАВЛЯЕМ ОТЗЫВ В TELEGRAM
     await sendFeedbackToTelegram();
 
@@ -448,6 +519,12 @@ export const BudgetCalculator = () => {
       .map(option => ({ ...option, sortOrder: Math.random() }))
       .sort((a, b) => a.sortOrder - b.sortOrder);
     setShuffledOptions(mixed);
+    
+    // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - СБРОС КАЛЬКУЛЯТОРА
+    trackEngagement('calculator_reset', {
+      previous_selections: selectedOptions.length,
+      previous_budget: budget
+    });
     
     setMessages([
       {

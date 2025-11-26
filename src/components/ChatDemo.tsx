@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import sendMessageIcon from "@/assets/send-message.svg";
 import { useProductActions } from "@/hooks/useProductActions";
+import { useEngagementTracker } from "@/hooks/useEngagementTracker";
 
 const scenarios: Message[] = [
   // СЦЕНАРИЙ 1: ЗАПИСЬ СИМПТОМОВ (Понедельник)
@@ -60,6 +61,8 @@ const scenarios: Message[] = [
 ];
 
 export const ChatDemo = () => {
+  const { trackEngagement } = useEngagementTracker();
+  const [demoStartTime] = useState(Date.now());
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
@@ -134,6 +137,14 @@ export const ChatDemo = () => {
         console.log('📊 Яндекс.Метрика: демо завершено');
       }
       
+      // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ ДЕМО
+      const demoDuration = Date.now() - demoStartTime;
+      trackEngagement('demo_completed', {
+        demo_duration: demoDuration,
+        messages_viewed: messages.length,
+        scenarios_completed: scenarios.length
+      });
+      
       console.log('🎯 Demo completed - sending milestone event');
       completeMilestone('demo');
       
@@ -144,7 +155,7 @@ export const ChatDemo = () => {
         variant: "default",
       });
     }
-  }, [currentScenarioIndex, isStarted, completeMilestone, toast]);
+  }, [currentScenarioIndex, isStarted, completeMilestone, toast, trackEngagement, demoStartTime, messages.length]);
 
   const startAutoType = (text: string) => {
     setIsAutoTyping(true);
@@ -182,14 +193,31 @@ export const ChatDemo = () => {
     setIsWaitingForUserInput(false);
     setAiStatus("ИИ печатает...");
     setCurrentScenarioIndex(prev => prev + 1);
+
+    // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ОТПРАВКА СООБЩЕНИЯ
+    trackEngagement('demo_message_sent', {
+      message_content: currentUserText,
+      message_length: currentUserText.length,
+      current_scenario: currentScenarioIndex + 1,
+      total_scenarios: scenarios.length
+    });
   };
 
   const handleDemoEnd = () => {
     setIsStarted(false);
     setCurrentUserText("");
     setAiStatus("Всегда на связи");
+    
+    // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ПРЕРЫВАНИЕ ДЕМО
+    const demoDuration = Date.now() - demoStartTime;
+    trackEngagement('demo_interrupted', {
+      demo_duration: demoDuration,
+      messages_viewed: messages.length,
+      scenarios_completed: currentScenarioIndex
+    });
+    
     toast({
-      title: "Демонstration завершена!",
+      title: "Демонстрация завершена!",
       description: "Нажмите на поле ввода, чтобы начать заново"
     });
   };
@@ -202,6 +230,12 @@ export const ChatDemo = () => {
       window.ym(12345678, 'reachGoal', 'demo_started');
       console.log('📊 Яндекс.Метрика: демо начато');
     }
+
+    // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - НАЧАЛО ДЕМО
+    trackEngagement('demo_started', {
+      start_time: demoStartTime,
+      total_scenarios: scenarios.length
+    });
 
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -237,6 +271,15 @@ export const ChatDemo = () => {
       setIsTyping(true);
       setAiStatus("ИИ печатает...");
       
+      // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ПОЛУЧЕНИЕ СООБЩЕНИЯ ОТ ИИ
+      if (currentMessage.showGraph || currentMessage.showPDF) {
+        trackEngagement('demo_special_message', {
+          message_type: currentMessage.showGraph ? 'graph' : 'pdf',
+          scenario_index: currentScenarioIndex,
+          message_content: currentMessage.content.substring(0, 100) + '...'
+        });
+      }
+      
       // 🔥 УВЕЛИЧЕННОЕ ВРЕМЯ МЕЖДУ СООБЩЕНИЯМИ ИИ
       const typingTime = 2000;
       const pauseBetweenAIMessages = 2500;
@@ -265,7 +308,7 @@ export const ChatDemo = () => {
     if (currentMessage.role === "user" && !isWaitingForUserInput && !isAutoTyping) {
       setCurrentScenarioIndex(prev => prev + 1);
     }
-  }, [isStarted, currentScenarioIndex, isWaitingForUserInput, isAutoTyping]);
+  }, [isStarted, currentScenarioIndex, isWaitingForUserInput, isAutoTyping, trackEngagement]);
 
   useEffect(() => {
     if (isAutoTyping) {

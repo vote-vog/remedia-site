@@ -7,29 +7,36 @@ export const YandexMetrika = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Ждем загрузки DOM
-    setTimeout(() => {
-      // Нативная интеграция Яндекс.Метрики
-      (function(m,e,t,r,i,k,a){
-        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a);
-      })(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+    // Проверяем не загружена ли уже метрика
+    if (window.ym) {
+      console.log('✅ Яндекс.Метрика уже загружена');
+      return;
+    }
 
-      // Инициализация счетчика
-      if (window.ym) {
-        window.ym(YANDEX_COUNTER_ID, "init", {
-          clickmap: true,
-          trackLinks: true,
-          accurateTrackBounce: true,
-          webvisor: true,
-          ecommerce: true,
-          trackHash: true
-        });
-        
-        console.log('✅ Яндекс.Метрика инициализирована');
-      }
-    }, 1000);
+    // Нативная загрузка Яндекс.Метрики
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.async = true;
+    script.src = 'https://mc.yandex.ru/metrika/tag.js';
+    
+    script.onload = () => {
+      // Ждем полной инициализации
+      setTimeout(() => {
+        if (window.ym) {
+          window.ym(YANDEX_COUNTER_ID, 'init', {
+            clickmap: true,
+            trackLinks: true,
+            accurateTrackBounce: true,
+            webvisor: true,
+            ecommerce: true,
+            trackHash: true
+          });
+          console.log('🎯 Яндекс.Метрика полностью инициализирована');
+        }
+      }, 1000);
+    };
+
+    document.head.appendChild(script);
 
   }, []);
 
