@@ -32,83 +32,6 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
   const [viewedEggs, setViewedEggs] = useState<Set<string>>(new Set());
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
 
-  // Функция для отслеживания событий пасхалок
-  const trackEggEvent = useCallback((eggId: string, eggTitle: string, eventType: 'view' | 'collect_all') => {
-    // Существующий код трекинга (если есть)...
-    
-    // 🔥 ДОБАВЛЯЕМ ОТСЛЕЖИВАНИЕ ВОВЛЕЧЕННОСТИ
-    trackEngagement(`egg_${eventType}`, {
-      egg_id: eggId,
-      egg_title: eggTitle,
-      eggs_viewed_count: viewedEggs.size + 1
-    });
-  }, [trackEngagement, viewedEggs.size]);
-
-  // Восстанавливаем состояние из sessionStorage при загрузке
-  useEffect(() => {
-    const savedViewedEggs = sessionStorage.getItem('easterEggs_viewed');
-    if (savedViewedEggs) {
-      try {
-        const parsed = JSON.parse(savedViewedEggs);
-        setViewedEggs(new Set(parsed));
-      } catch (e) {
-        console.log('No saved easter eggs state');
-      }
-    }
-  }, []);
-
-  // Сохраняем состояние в sessionStorage при изменении
-  useEffect(() => {
-    if (viewedEggs.size > 0) {
-      sessionStorage.setItem('easterEggs_viewed', JSON.stringify(Array.from(viewedEggs)));
-    }
-  }, [viewedEggs]);
-
-  // Функция для проверки, можно ли активировать яйцо
-  const canActivateEgg = useCallback((eggId: string) => {
-    return !viewedEggs.has(eggId);
-  }, [viewedEggs]);
-
-  // Отслеживаем первый скролл
-  useEffect(() => {
-    const handleFirstScroll = () => {
-      if (!hasScrolled) {
-        setHasScrolled(true);
-        setTimeout(() => {
-          if (canActivateEgg('for-everyone')) {
-            setActiveEggs(prev => new Set(prev).add('for-everyone'));
-          }
-        }, 1000);
-      }
-    };
-
-    window.addEventListener('scroll', handleFirstScroll, { passive: true, once: true });
-    return () => window.removeEventListener('scroll', handleFirstScroll);
-  }, [hasScrolled, canActivateEgg]);
-
-  // Отслеживаем клик по прогресс-бару
-  useEffect(() => {
-    if (progressBarClicked && !hasClickedProgress) {
-      setHasClickedProgress(true);
-      setTimeout(() => {
-        if (canActivateEgg('token-economy')) {
-          setActiveEggs(prev => new Set(prev).add('token-economy'));
-        }
-      }, 500);
-    }
-  }, [progressBarClicked, hasClickedProgress, canActivateEgg]);
-
-  // Отслеживаем любой клик по кнопкам
-  useEffect(() => {
-    if (anyButtonClicked) {
-      setTimeout(() => {
-        if (canActivateEgg('founder-story')) {
-          setActiveEggs(prev => new Set(prev).add('founder-story'));
-        }
-      }, 800);
-    }
-  }, [anyButtonClicked, canActivateEgg]);
-
   const eggs: EasterEgg[] = [
     {
       id: 'for-everyone',
@@ -200,6 +123,87 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
       delay: 105000
     }
   ];
+
+  // В функции trackEggEvent добавляем сессионные данные:
+  const trackEggEvent = useCallback((eggId: string, eggTitle: string, eventType: 'view' | 'collect_all') => {
+    const egg = eggs.find(e => e.id === eggId);
+    
+    trackEngagement(`egg_${eventType}`, {
+      egg_id: eggId,
+      egg_title: eggTitle,
+      eggs_viewed_count: viewedEggs.size + 1,
+      egg_position: egg?.position, // 🎯 позиция на экране
+      session_eggs: viewedEggs.size + 1,
+      is_priority_egg: ['for-everyone', 'token-economy', 'founder-story'].includes(eggId),
+      egg_trigger_type: egg?.trigger, // тип триггера активации
+      total_available_eggs: eggs.length // общее количество пасхалок
+    });
+  }, [trackEngagement, viewedEggs.size, eggs]);
+
+  // Восстанавливаем состояние из sessionStorage при загрузке
+  useEffect(() => {
+    const savedViewedEggs = sessionStorage.getItem('easterEggs_viewed');
+    if (savedViewedEggs) {
+      try {
+        const parsed = JSON.parse(savedViewedEggs);
+        setViewedEggs(new Set(parsed));
+      } catch (e) {
+        console.log('No saved easter eggs state');
+      }
+    }
+  }, []);
+
+  // Сохраняем состояние в sessionStorage при изменении
+  useEffect(() => {
+    if (viewedEggs.size > 0) {
+      sessionStorage.setItem('easterEggs_viewed', JSON.stringify(Array.from(viewedEggs)));
+    }
+  }, [viewedEggs]);
+
+  // Функция для проверки, можно ли активировать яйцо
+  const canActivateEgg = useCallback((eggId: string) => {
+    return !viewedEggs.has(eggId);
+  }, [viewedEggs]);
+
+  // Отслеживаем первый скролл
+  useEffect(() => {
+    const handleFirstScroll = () => {
+      if (!hasScrolled) {
+        setHasScrolled(true);
+        setTimeout(() => {
+          if (canActivateEgg('for-everyone')) {
+            setActiveEggs(prev => new Set(prev).add('for-everyone'));
+          }
+        }, 1000);
+      }
+    };
+
+    window.addEventListener('scroll', handleFirstScroll, { passive: true, once: true });
+    return () => window.removeEventListener('scroll', handleFirstScroll);
+  }, [hasScrolled, canActivateEgg]);
+
+  // Отслеживаем клик по прогресс-бару
+  useEffect(() => {
+    if (progressBarClicked && !hasClickedProgress) {
+      setHasClickedProgress(true);
+      setTimeout(() => {
+        if (canActivateEgg('token-economy')) {
+          setActiveEggs(prev => new Set(prev).add('token-economy'));
+        }
+      }, 500);
+    }
+  }, [progressBarClicked, hasClickedProgress, canActivateEgg]);
+
+  // Отслеживаем любой клик по кнопкам
+  useEffect(() => {
+    if (anyButtonClicked) {
+      setTimeout(() => {
+        if (canActivateEgg('founder-story')) {
+          setActiveEggs(prev => new Set(prev).add('founder-story'));
+        }
+      }, 800);
+    }
+  }, [anyButtonClicked, canActivateEgg]);
 
   // Активация по времени
   useEffect(() => {
