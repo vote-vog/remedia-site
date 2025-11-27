@@ -181,6 +181,18 @@ export const BudgetCalculator = () => {
     );
   };
 
+  // 🎯 ФУНКЦИЯ АНАЛИЗА СТРАТЕГИИ ВЫБОРА
+  const getSelectionStrategy = () => {
+    const features = selectedOptions.filter(id => id <= 6).length;
+    const temptations = selectedOptions.filter(id => id > 6).length;
+    
+    if (features === 0 && temptations > 0) return 'only_temptations';
+    if (features > 0 && temptations === 0) return 'only_features'; 
+    if (features > temptations) return 'feature_focused';
+    if (temptations > features) return 'temptation_focused';
+    return 'balanced';
+  };
+
   // 🔥 ИСПОЛЬЗОВАНИЕ КРЕДИТА ДЛЯ ПОКУПКИ ОПЦИИ
   const handleUseCredit = (optionId: number, price: number) => {
     const option = allOptions.find(o => o.id === optionId);
@@ -255,9 +267,10 @@ export const BudgetCalculator = () => {
     }
   }, [messages]);
 
-  // Выбор опции
+  // В handleSelectOption добавляем анализ выбора:
   const handleSelectOption = (optionId: number, price: number) => {
     const option = allOptions.find(o => o.id === optionId);
+    const isFeature = optionId <= 6;
     
     if (selectedOptions.includes(optionId)) {
       // Уже выбрано - убираем
@@ -292,10 +305,13 @@ export const BudgetCalculator = () => {
       trackEngagement('calculator_option_selected', {
         option_id: optionId,
         option_name: option?.name,
-        option_type: option?.type,
+        option_type: isFeature ? 'feature' : 'temptation',
         option_price: price,
         budget_remaining: budget - price,
-        total_selected: selectedOptions.length + 1
+        total_selected: selectedOptions.length + 1,
+        features_count: selectedOptions.filter(id => id <= 6).length + (isFeature ? 1 : 0),
+        temptations_count: selectedOptions.filter(id => id > 6).length + (!isFeature ? 1 : 0),
+        selection_strategy: getSelectionStrategy() // 🎯 анализируем стратегию выбора
       });
 
       // AI ответ
@@ -346,7 +362,8 @@ export const BudgetCalculator = () => {
       budget_remaining: budget,
       credit_eligible: credit > 0,
       credit_used: creditUsed,
-      total_spent: 500 - budget
+      total_spent: 500 - budget,
+      final_selection_strategy: getSelectionStrategy() // 🎯 финальная стратегия
     });
     
     // 🔥 Яндекс.Метрика - ЗАВЕРШЕНИЕ КАЛЬКУЛЯТОРА
@@ -377,7 +394,8 @@ export const BudgetCalculator = () => {
       trackEngagement('calculator_credit_offered', {
         credit_amount: credit,
         selected_features: selectedOptions.filter(id => id <= 6).length,
-        selected_temptations: selectedOptions.filter(id => id > 6).length
+        selected_temptations: selectedOptions.filter(id => id > 6).length,
+        selection_strategy: getSelectionStrategy()
       });
 
       setTimeout(() => {
@@ -406,7 +424,8 @@ export const BudgetCalculator = () => {
     trackEngagement('calculator_credit_skipped', {
       credit_amount: availableCredit,
       selected_features: selectedOptions.filter(id => id <= 6).length,
-      selected_temptations: selectedOptions.filter(id => id > 6).length
+      selected_temptations: selectedOptions.filter(id => id > 6).length,
+      selection_strategy: getSelectionStrategy()
     });
 
     // 🔥 ОТПРАВЛЯЕМ В TELEGRAM КЛЮЧЕВОЕ СОБЫТИЕ
@@ -472,7 +491,8 @@ export const BudgetCalculator = () => {
       feedback_length: feedbackText.length,
       selected_features: selectedOptions.filter(id => id <= 6).length,
       selected_temptations: selectedOptions.filter(id => id > 6).length,
-      credit_used: creditUsed
+      credit_used: creditUsed,
+      final_selection_strategy: getSelectionStrategy()
     });
 
     // 🔥 ОТПРАВЛЯЕМ ОТЗЫВ В TELEGRAM
@@ -523,7 +543,8 @@ export const BudgetCalculator = () => {
     // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - СБРОС КАЛЬКУЛЯТОРА
     trackEngagement('calculator_reset', {
       previous_selections: selectedOptions.length,
-      previous_budget: budget
+      previous_budget: budget,
+      previous_strategy: getSelectionStrategy()
     });
     
     setMessages([

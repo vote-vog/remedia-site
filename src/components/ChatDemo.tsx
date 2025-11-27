@@ -157,6 +157,17 @@ export const ChatDemo = () => {
     }
   }, [currentScenarioIndex, isStarted, completeMilestone, toast, trackEngagement, demoStartTime, messages.length]);
 
+  // 🎯 ТРЕКИНГ СПЕЦИАЛЬНЫХ СООБЩЕНИЙ
+  useEffect(() => {
+    if (messages.some(m => m.showGraph || m.showPDF)) {
+      trackEngagement('demo_special_content', {
+        has_graph: messages.some(m => m.showGraph),
+        has_pdf: messages.some(m => m.showPDF),
+        scenario_stage: currentScenarioIndex
+      });
+    }
+  }, [messages, trackEngagement, currentScenarioIndex]);
+
   const startAutoType = (text: string) => {
     setIsAutoTyping(true);
     setCurrentUserText("");
@@ -179,8 +190,18 @@ export const ChatDemo = () => {
     typeNextChar();
   };
 
+  // В обработчике отправки сообщения:
   const handleSendMessage = () => {
     if (!currentUserText.trim()) return;
+
+    // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ОТПРАВКА СООБЩЕНИЯ
+    trackEngagement('demo_message_sent', {
+      message_length: currentUserText.length,
+      message_content_snippet: currentUserText.substring(0, 20), // 🎯 фрагмент сообщения
+      scenario_progress: currentScenarioIndex,
+      total_messages: messages.length + 1,
+      time_to_first_message: Date.now() - demoStartTime
+    });
 
     const userMessage: Message = {
       id: `user-${Date.now()}`,
@@ -193,14 +214,6 @@ export const ChatDemo = () => {
     setIsWaitingForUserInput(false);
     setAiStatus("ИИ печатает...");
     setCurrentScenarioIndex(prev => prev + 1);
-
-    // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ОТПРАВКА СООБЩЕНИЯ
-    trackEngagement('demo_message_sent', {
-      message_content: currentUserText,
-      message_length: currentUserText.length,
-      current_scenario: currentScenarioIndex + 1,
-      total_scenarios: scenarios.length
-    });
   };
 
   const handleDemoEnd = () => {
