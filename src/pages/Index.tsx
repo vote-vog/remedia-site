@@ -14,6 +14,7 @@ import { Header } from "@/components/Header";
 import { ProgressBar } from "@/components/ProgressBar";
 import { Footer } from "@/components/layout/Footer";
 import { EasterEggs } from "@/components/EasterEggs";
+import { YandexMetrika } from "@/components/YandexMetrika";
 import { useProgress } from "@/hooks/useProgress";
 
 const Index = () => {
@@ -77,6 +78,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* 🎯 Яндекс.Метрика */}
+      <YandexMetrika />
+
       {/* 🎯 ПАСХАЛКИ-КАПСУЛКИ */}
       <EasterEggs 
         progressBarClicked={progressBarClicked}
