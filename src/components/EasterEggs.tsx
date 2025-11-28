@@ -24,6 +24,78 @@ interface EasterEggsProps {
   anyButtonClicked?: boolean;
 }
 
+// Вспомогательный компонент для отображения яйца с безопасным HTML
+const EggContent = ({ egg, onClose }: { egg: EasterEgg; onClose: () => void }) => {
+  const getEggColor = (eggId: string) => {
+    const colors: { [key: string]: string } = {
+      'for-everyone': 'rgba(16, 185, 129, 0.8)',
+      'mission-control': 'rgba(6, 182, 212, 0.8)',
+      'token-economy': 'rgba(14, 165, 233, 0.8)',
+      'founder-story': 'rgba(59, 130, 246, 0.8)',
+      'digital-twin': 'rgba(16, 185, 129, 0.8)',
+      'privacy-first': 'rgba(6, 182, 212, 0.8)',
+      'patient-power': 'rgba(14, 165, 233, 0.8)',
+      'ai-revolution': 'rgba(59, 130, 246, 0.8)',
+      'personalized-medicine': 'rgba(16, 185, 129, 0.8)',
+      'health-ecosystem': 'rgba(6, 182, 212, 0.8)'
+    };
+    return colors[eggId] || 'rgba(6, 182, 212, 0.8)';
+  };
+
+  return (
+    <div className="relative p-6">
+      <button 
+        onClick={onClose}
+        className="absolute right-4 top-4 p-1 hover:bg-gray-100/50 rounded-lg transition-colors z-10"
+      >
+        <X size={16} className="text-gray-500" />
+      </button>
+      
+      <div className="flex items-center gap-3 mb-4">
+        <div 
+          className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
+          style={{
+            background: `linear-gradient(135deg, ${getEggColor(egg.id)}, ${getEggColor(egg.id)}CC)`,
+            boxShadow: `0 4px 15px ${getEggColor(egg.id)}40`
+          }}
+        >
+          {egg.icon}
+        </div>
+        <h3 className="font-bold text-gray-900 text-lg">{egg.title}</h3>
+      </div>
+      
+      <p 
+        className="text-gray-700 leading-relaxed text-sm"
+        dangerouslySetInnerHTML={{ __html: egg.content }}
+      />
+      
+      <motion.div
+        className="flex gap-1 mt-4 justify-end"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
+        {[...Array(3)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="w-1 h-1 rounded-full"
+            style={{ backgroundColor: getEggColor(egg.id) }}
+            animate={{
+              scale: [1, 1.5, 1],
+              opacity: [0.5, 1, 0.5],
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              delay: i * 0.2
+            }}
+          />
+        ))}
+      </motion.div>
+    </div>
+  );
+};
+
 export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = false }: EasterEggsProps) => {
   const { trackEngagement } = useEngagementTracker();
   const { t } = useLanguage();
@@ -423,55 +495,11 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
                 }}
               >
                 {eggs.filter(egg => egg.id === visibleEgg).map(egg => (
-                  <div key={egg.id} className="relative p-6">
-                    <button 
-                      onClick={() => closeEgg(egg.id)}
-                      className="absolute right-4 top-4 p-1 hover:bg-gray-100/50 rounded-lg transition-colors z-10"
-                    >
-                      <X size={16} className="text-gray-500" />
-                    </button>
-                    
-                    <div className="flex items-center gap-3 mb-4">
-                      <div 
-                        className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
-                        style={{
-                          background: `linear-gradient(135deg, ${getEggColor(egg.id)}, ${getEggColor(egg.id)}CC)`,
-                          boxShadow: `0 4px 15px ${getEggColor(egg.id)}40`
-                        }}
-                      >
-                        {egg.icon}
-                      </div>
-                      <h3 className="font-bold text-gray-900 text-lg">{egg.title}</h3>
-                    </div>
-                    
-                    <p className="text-gray-700 leading-relaxed text-sm">
-                      {egg.content}
-                    </p>
-                    
-                    <motion.div
-                      className="flex gap-1 mt-4 justify-end"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      {[...Array(3)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          className="w-1 h-1 rounded-full"
-                          style={{ backgroundColor: getEggColor(egg.id) }}
-                          animate={{
-                            scale: [1, 1.5, 1],
-                            opacity: [0.5, 1, 0.5],
-                          }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            delay: i * 0.2
-                          }}
-                        />
-                      ))}
-                    </motion.div>
-                  </div>
+                  <EggContent 
+                    key={egg.id} 
+                    egg={egg} 
+                    onClose={() => closeEgg(egg.id)} 
+                  />
                 ))}
               </motion.div>
             </div>
@@ -591,9 +619,8 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 1.0 }}
                       className="text-gray-700 text-lg leading-relaxed mb-6"
-                    >
-                      {t('easterEggs.completion.description')}
-                    </motion.p>
+                      dangerouslySetInnerHTML={{ __html: t('easterEggs.completion.description') }}
+                    />
 
                     {/* P.S. */}
                     <motion.div

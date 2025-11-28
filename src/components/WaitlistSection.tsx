@@ -7,6 +7,7 @@ import { RewardsPopup } from "@/components/RewardsPopup";
 import { Share2, Crown, Users, Rocket, Star, Sparkles, Zap, Trophy, Gem, Award } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useSafeHTML } from "@/hooks/useSafeHTML";
 
 export const WaitlistSection = () => {
   const { count } = useGlobalCounter();
@@ -18,6 +19,12 @@ export const WaitlistSection = () => {
   // 🔥 УПРОЩЕННЫЕ СОСТОЯНИЯ ДЛЯ АНИМАЦИИ
   const [showTransition, setShowTransition] = useState(false);
   const [showNewState, setShowNewState] = useState(false);
+
+  // 🔥 ИСПОЛЬЗУЕМ useSafeHTML ДЛЯ ПЕРЕВОДОВ С HTML
+  const founderDescription = useSafeHTML(t('waitlist.founder.description'));
+  const founderFinalMessage = useSafeHTML(t('waitlist.founder.finalMessage'));
+  const initialDescription = useSafeHTML(t('waitlist.initial.description'));
+  const missionDescription = useSafeHTML(t('waitlist.initial.mission.description'));
 
   // 🔥 МЕМОИЗАЦИЯ ОБРАБОТЧИКОВ
   const handleMainAction = useCallback(() => {
@@ -410,9 +417,8 @@ export const WaitlistSection = () => {
                 delay: showTransition ? 2.8 : 1.0,
                 ease: "easeOut"
               }}
-            >
-              {t('waitlist.founder.description')}
-            </motion.p>
+              dangerouslySetInnerHTML={founderDescription}
+            />
 
             {/* 🔥 УЛУЧШЕННЫЕ КАРТОЧКИ СТАТИСТИКИ */}
             <motion.div 
@@ -683,9 +689,8 @@ export const WaitlistSection = () => {
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: showTransition ? 4.7 : 3.2 }}
-              >
-                {t('waitlist.founder.finalMessage')}
-              </motion.p>
+                dangerouslySetInnerHTML={founderFinalMessage}
+              />
             </motion.div>
           </div>
         </motion.section>
@@ -755,9 +760,8 @@ export const WaitlistSection = () => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.9, delay: 0.4 }}
-          >
-            {t('waitlist.initial.description')}
-          </motion.p>
+            dangerouslySetInnerHTML={initialDescription}
+          />
 
           {/* Упрощенные ценности */}
           <motion.div 
@@ -898,7 +902,7 @@ export const WaitlistSection = () => {
           >
             <p className="text-sm text-teal-800 dark:text-[#54F5DF] text-center font-light leading-relaxed">
               <strong className="font-medium">{t('waitlist.initial.mission.title')}</strong>{" "}
-              {t('waitlist.initial.mission.description')}
+              <span dangerouslySetInnerHTML={missionDescription} />
             </p>
           </motion.div>
         </div>

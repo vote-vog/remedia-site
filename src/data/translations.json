@@ -94,8 +94,9 @@
           "description": "точность AI в определении связи между симптомами и триггерами"
         },
         "1": {
-          "title": "Экономия времени",
-          "description": "средняя экономия времени на подготовку к визиту врача"
+          "title": "часа экономии времени",
+          "description": "средняя экономия времени на подготовку к визиту врача",
+          "value": "3.5 часа"
         },
         "2": {
           "title": "Полнота данных",
@@ -675,8 +676,9 @@
           "description": "AI accuracy in determining connections between symptoms and triggers"
         },
         "1": {
-          "title": "Time Savings",
-          "description": "average time savings for doctor visit preparation"
+          "title": "Hours Time Savings",
+          "description": "average time savings for doctor visit preparation",
+          "value": "3.5 hours"
         },
         "2": {
           "title": "Data Completeness",

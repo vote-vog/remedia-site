@@ -374,6 +374,12 @@ export const ChatDemo = ({ onButtonClick }: ChatDemoProps) => {
     };
   }, []);
 
+  // 🔥 ПРОВЕРКА: КОГДА КНОПКА АКТИВНА
+  const isButtonActive = isStarted && 
+                        isWaitingForUserInput && 
+                        currentUserText.trim() && 
+                        !isAutoTyping;
+
   return (
     <div className="w-full max-w-3xl mx-auto bg-card rounded-2xl shadow-lg overflow-hidden border border-border">
       <div className="bg-primary text-primary-foreground p-4 flex items-center gap-3">
@@ -494,48 +500,118 @@ export const ChatDemo = ({ onButtonClick }: ChatDemoProps) => {
           {isStarted && (
             <motion.button
               onClick={handleSendMessage}
-              disabled={!currentUserText.trim() || isAutoTyping || !isWaitingForUserInput}
-              className="px-4 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center relative overflow-hidden"
+              disabled={!isButtonActive}
+              className="px-4 py-3 rounded-xl text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center relative overflow-hidden group"
               animate={
-                isButtonPulsing
+                isButtonPulsing && isButtonActive
                   ? {
-                      scale: [1, 1.05, 1],
-                      boxShadow: [
-                        "0 0 0 0px rgba(255, 255, 255, 0.4)",
-                        "0 0 0 8px rgba(255, 255, 255, 0.2)",
-                        "0 0 0 0px rgba(255, 255, 255, 0)"
-                      ]
+                      scale: [1, 1.03, 1],
                     }
                   : {}
               }
               transition={{
-                duration: 0.8,
-                repeat: isButtonPulsing ? Infinity : 0,
+                duration: 1.2,
+                repeat: isButtonPulsing && isButtonActive ? Infinity : 0,
                 ease: "easeInOut"
               }}
             >
-              {isAutoTyping ? (
-                "⏳"
+              {/* 🔥 УЛУЧШЕННАЯ АНИМАЦИЯ ГРАДИЕНТНОГО ПЕРЕЛИВА - ТОЛЬКО ДЛЯ АКТИВНОЙ КНОПКИ */}
+              {isButtonActive ? (
+                <>
+                  <motion.div
+                    className="absolute inset-0"
+                    animate={{
+                      background: [
+                        "linear-gradient(135deg, #3b82f6, #06b6d4, #10b981)", // синий → бирюзовый → мятный
+                        "linear-gradient(135deg, #06b6d4, #10b981, #f59e0b)", // бирюзовый → мятный → золотой
+                        "linear-gradient(135deg, #10b981, #f59e0b, #8b5cf6)", // мятный → золотой → фиолетовый
+                        "linear-gradient(135deg, #f59e0b, #8b5cf6, #3b82f6)", // золотой → фиолетовый → синий
+                        "linear-gradient(135deg, #8b5cf6, #3b82f6, #06b6d4)", // фиолетовый → синий → бирюзовый
+                      ],
+                    }}
+                    transition={{
+                      duration: 8,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                  />
+                  
+                  {/* 🔥 ПЛАВНЫЙ СВЕТЯЩИЙСЯ ЭФФЕКТ - ТОЛЬКО ДЛЯ АКТИВНОЙ КНОПКИ */}
+                  <motion.div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    animate={{
+                      boxShadow: [
+                        "0 0 20px rgba(59, 130, 246, 0.4)",
+                        "0 0 30px rgba(6, 182, 212, 0.6)",
+                        "0 0 25px rgba(16, 185, 129, 0.5)",
+                        "0 0 35px rgba(245, 158, 11, 0.7)",
+                        "0 0 30px rgba(139, 92, 246, 0.6)",
+                        "0 0 20px rgba(59, 130, 246, 0.4)",
+                      ],
+                    }}
+                    transition={{
+                      duration: 8,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                  
+                  {/* 🔥 АНИМАЦИЯ БЛЕСТЯЩЕЙ ВОЛНЫ - ТОЛЬКО ДЛЯ АКТИВНОЙ КНОПКИ */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12"
+                    animate={{
+                      x: ["-100%", "200%"],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      repeatDelay: 2,
+                      ease: "easeInOut",
+                    }}
+                  />
+                  
+                  {/* 🔥 МИКРО-АНИМАЦИЯ ПРИ НАВЕДЕНИИ - ТОЛЬКО ДЛЯ АКТИВНОЙ КНОПКИ */}
+                  <motion.div
+                    className="absolute inset-0 border-2 border-white/30 rounded-xl"
+                    whileHover={{
+                      scale: 1.02,
+                      borderColor: "rgba(255,255,255,0.5)",
+                    }}
+                    transition={{
+                      duration: 0.2,
+                    }}
+                  />
+                </>
               ) : (
-                <motion.img 
-                  src={sendMessageIcon} 
-                  alt={t('chatDemo.sendButton.alt')} 
-                  className="w-5 h-5 filter brightness-0 invert"
-                  animate={
-                    isButtonPulsing
-                      ? {
-                          scale: [1, 1.2, 1],
-                          opacity: [1, 0.7, 1]
-                        }
-                      : {}
-                  }
-                  transition={{
-                    duration: 0.8,
-                    repeat: isButtonPulsing ? Infinity : 0,
-                    ease: "easeInOut"
-                  }}
-                />
+                // 🔥 СТАТИЧНЫЙ ФОН ДЛЯ НЕАКТИВНОЙ КНОПКИ
+                <div className="absolute inset-0 bg-gray-400 rounded-xl" />
               )}
+              
+              {/* 🔥 ТЕКСТ И ИКОНКА */}
+              <div className="relative z-10 flex items-center justify-center">
+                {isAutoTyping ? (
+                  <span className="text-sm font-medium">⏳</span>
+                ) : (
+                  <motion.img 
+                    src={sendMessageIcon} 
+                    alt={t('chatDemo.sendButton.alt')} 
+                    className="w-5 h-5 filter brightness-0 invert"
+                    animate={
+                      isButtonPulsing && isButtonActive
+                        ? {
+                            scale: [1, 1.1, 1],
+                            rotate: [0, 5, -5, 0],
+                          }
+                        : {}
+                    }
+                    transition={{
+                      duration: 1.2,
+                      repeat: isButtonPulsing && isButtonActive ? Infinity : 0,
+                      ease: "easeInOut"
+                    }}
+                  />
+                )}
+              </div>
             </motion.button>
           )}
         </div>

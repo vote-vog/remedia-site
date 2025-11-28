@@ -35,7 +35,35 @@ export const ProgressBar = ({ onOpenRewards, onOpenReferral }: ProgressBarProps)
 
   // Эффекты для 200%
   const [isExploding, setIsExploding] = useState(false);
+  
+  // 🔥 НОВЫЕ СОСТОЯНИЯ ДЛЯ АНИМАЦИЙ
+  const [isProgressAnimating, setIsProgressAnimating] = useState(false);
+  const [isFlashAnimating, setIsFlashAnimating] = useState(false);
+  const [prevProgress, setPrevProgress] = useState(completionPercentage);
 
+  // Анимация при изменении прогресса
+  useEffect(() => {
+    if (prevProgress !== completionPercentage) {
+      // Запускаем анимацию "колокольчика"
+      setIsProgressAnimating(true);
+      
+      // Запускаем вспышку фона
+      setIsFlashAnimating(true);
+      
+      // Сбрасываем анимации через короткое время
+      const progressTimer = setTimeout(() => setIsProgressAnimating(false), 600);
+      const flashTimer = setTimeout(() => setIsFlashAnimating(false), 300);
+      
+      setPrevProgress(completionPercentage);
+      
+      return () => {
+        clearTimeout(progressTimer);
+        clearTimeout(flashTimer);
+      };
+    }
+  }, [completionPercentage, prevProgress]);
+
+  // Эффекты для 200%
   useEffect(() => {
     if (isMaxPower && !isExploding) {
       setIsExploding(true);
@@ -143,7 +171,7 @@ export const ProgressBar = ({ onOpenRewards, onOpenReferral }: ProgressBarProps)
         rotate: { duration: 2, repeat: isMaxPower ? Infinity : 0, ease: "easeInOut" }
       }}
     >
-      {/* СУМАСШЕДШИЙ ФОН ДЛЯ 200% */}
+      {/* 🔥 УСИЛЕННЫЙ ФОН С АНИМАЦИЕЙ ВСПЫШКИ */}
       {isMaxPower && (
         <>
           <motion.div
@@ -183,12 +211,47 @@ export const ProgressBar = ({ onOpenRewards, onOpenReferral }: ProgressBarProps)
         </>
       )}
 
+      {/* 🔥 АНИМАЦИЯ ВСПЫШКИ ПРИ ИЗМЕНЕНИИ ПРОГРЕССА */}
+      {isFlashAnimating && (
+        <motion.div
+          className="absolute -inset-12 rounded-full z-0 pointer-events-none"
+          initial={{ 
+            scale: 0.8, 
+            opacity: 0,
+            background: isOverPlan 
+              ? "radial-gradient(circle, #fbbf24, #f59e0b, transparent 60%)"
+              : "radial-gradient(circle, #6366f1, #8b5cf6, transparent 60%)"
+          }}
+          animate={{ 
+            scale: [0.8, 2.5, 1.2],
+            opacity: [0, 0.8, 0],
+          }}
+          transition={{ 
+            duration: 0.6,
+            ease: "easeOut"
+          }}
+          style={{
+            filter: "blur(25px)",
+          }}
+          onAnimationComplete={() => setIsFlashAnimating(false)}
+        />
+      )}
+
       <motion.button
         className="relative block cursor-pointer group"
         onClick={handleClick}
         whileHover={{ scale: isMaxPower ? 1.1 : 1.05 }}
         whileTap={{ scale: isMaxPower ? 0.9 : 0.95 }}
-        animate={isNearLimit ? {
+        // 🔥 АНИМАЦИЯ КОЛОКОЛЬЧИКА ПРИ ИЗМЕНЕНИИ ПРОГРЕССА
+        animate={isProgressAnimating ? {
+          x: [0, -4, 4, -3, 3, 0],
+          y: [0, -2, 2, -1, 1, 0],
+          rotate: [0, -3, 3, -2, 2, 0],
+          transition: { 
+            duration: 0.6,
+            ease: "easeInOut"
+          }
+        } : isNearLimit ? {
           x: [0, -1, 1, -1, 1, 0],
           transition: { duration: 0.5, repeat: Infinity, repeatType: "loop" }
         } : isMaxPower ? {
@@ -204,7 +267,7 @@ export const ProgressBar = ({ onOpenRewards, onOpenReferral }: ProgressBarProps)
             `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><text x='16' y='20' text-anchor='middle' fill='%238b5cf6' font-size='18'>👆</text></svg>") 16 16, pointer`
         }}
       >
-        {/* Анимированный фон */}
+        {/* 🔥 УСИЛЕННЫЙ АНИМИРОВАННЫЙ ФОН */}
         <motion.div
           className="absolute -inset-6 rounded-full"
           animate={{ 
@@ -227,6 +290,31 @@ export const ProgressBar = ({ onOpenRewards, onOpenReferral }: ProgressBarProps)
             filter: "blur(20px)",
           }}
         />
+
+        {/* 🔥 ДОПОЛНИТЕЛЬНАЯ ВСПЫШКА ПРИ АНИМАЦИИ ПРОГРЕССА */}
+        {isProgressAnimating && (
+          <motion.div
+            className="absolute -inset-4 rounded-full z-5 pointer-events-none"
+            initial={{ 
+              scale: 1,
+              opacity: 0,
+              background: isOverPlan 
+                ? "radial-gradient(circle, #fef3c7, transparent 70%)"
+                : "radial-gradient(circle, #e0e7ff, transparent 70%)"
+            }}
+            animate={{ 
+              scale: [1, 1.8, 1],
+              opacity: [0, 0.4, 0],
+            }}
+            transition={{ 
+              duration: 0.5,
+              ease: "easeOut"
+            }}
+            style={{
+              filter: "blur(15px)",
+            }}
+          />
+        )}
 
         {/* ВЗРЫВ ЧАСТИЦ ПРИ 200% */}
         {isMaxPower && (
@@ -265,6 +353,19 @@ export const ProgressBar = ({ onOpenRewards, onOpenReferral }: ProgressBarProps)
           className="absolute -top-2 -right-2 z-10"
           initial={{ scale: 0, rotate: -180 }}
           animate={{ 
+            scale: 1, 
+            rotate: 0,
+            y: isMaxPower ? [0, -10, 0] : 0
+          }}
+          // 🔥 АНИМАЦИЯ КОЛОКОЛЬЧИКА ДЛЯ ИНДИКАТОРА
+          animate={isProgressAnimating ? {
+            scale: [1, 1.3, 1],
+            rotate: [0, 15, -15, 10, -10, 0],
+            transition: { 
+              duration: 0.6,
+              ease: "easeInOut"
+            }
+          } : {
             scale: 1, 
             rotate: 0,
             y: isMaxPower ? [0, -10, 0] : 0
@@ -720,6 +821,12 @@ export const ProgressBar = ({ onOpenRewards, onOpenReferral }: ProgressBarProps)
             animate={isMaxPower ? {
               scale: [1, 1.2, 1],
               boxShadow: ['0 0 0px #ff00ff', '0 0 20px #ff00ff', '0 0 0px #00ffff']
+            } : isProgressAnimating ? {
+              scale: [1, 1.15, 1],
+              backgroundColor: isOverPlan 
+                ? ['#f59e0b', '#fbbf24', '#f59e0b']
+                : ['#6366f1', '#8b5cf6', '#6366f1'],
+              transition: { duration: 0.4 }
             } : {}}
             transition={{ duration: 1, repeat: isMaxPower ? Infinity : 0 }}
           >
@@ -727,7 +834,10 @@ export const ProgressBar = ({ onOpenRewards, onOpenReferral }: ProgressBarProps)
             {isOverPlan && (
               <motion.span 
                 className="ml-1"
-                animate={isMaxPower ? { scale: [1, 1.5, 1] } : {}}
+                animate={isMaxPower ? { scale: [1, 1.5, 1] } : isProgressAnimating ? {
+                  scale: [1, 1.3, 1],
+                  rotate: [0, 15, -15, 0]
+                } : {}}
                 transition={{ duration: 0.5, repeat: isMaxPower ? Infinity : 0 }}
               >
                 {isMaxPower ? '💥' : '✨'}
