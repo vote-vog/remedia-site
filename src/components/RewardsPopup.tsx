@@ -9,6 +9,7 @@ import { X, Loader2, Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProgress } from '@/hooks/useProgress';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/hooks/useLanguage';
 
 interface RewardsPopupProps {
   isOpen: boolean;
@@ -51,13 +52,14 @@ export const RewardsPopup = ({
   
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const { t } = useLanguage();
 
   const { progress } = useProgress();
   const { toast } = useToast();
 
   // 🔥 TELEGRAM BOT CONFIG ДЛЯ ПОДПИСОК
   const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-  const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
+  const TELEGRAM_CHAT_ID = import.meta.env.VITE_TEGRAM_CHAT_ID;
 
   // 🔥 ФУНКЦИЯ ОПРЕДЕЛЕНИЯ РЕФЕРАЛЬНОГО ИСТОЧНИКА
   const getReferralSource = useCallback(() => {
@@ -82,18 +84,17 @@ export const RewardsPopup = ({
   }) => {
     const referralData = getReferralSource();
     
-    const message = `🎯 НОВАЯ ПОДПИСКА!
-
-👤 E-mail: ${userData.email}
-🏥 Заболевание: ${userData.disease}
-🎯 Решаемая проблема: ${userData.problem}
-📞 Способ связи: ${getNotifyMethodName(userData.notifyMethod)}
-📱 Канал связи: ${userData.contactDetails}
-🔗 Реферал: ${referralData.isReferral ? 'Да' : 'Нет'}
-${referralData.referralCode ? `🔑 Код: ${referralData.referralCode}` : ''}
-${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
-
-⏰ ${new Date().toLocaleString('ru-RU')}`;
+    const message = t('rewardsPopup.telegramMessage', {
+      email: userData.email,
+      disease: userData.disease,
+      problem: userData.problem,
+      notifyMethod: getNotifyMethodName(userData.notifyMethod),
+      contactDetails: userData.contactDetails,
+      isReferral: referralData.isReferral ? t('rewardsPopup.telegramYes') : t('rewardsPopup.telegramNo'),
+      referralCode: referralData.referralCode ? t('rewardsPopup.telegramCode', { code: referralData.referralCode }) : '',
+      utmSource: referralData.utmSource ? t('rewardsPopup.telegramUTM', { source: referralData.utmSource }) : '',
+      timestamp: new Date().toLocaleString('ru-RU')
+    });
 
     try {
       const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -117,9 +118,9 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
   // 🔥 ФУНКЦИЯ ПОЛУЧЕНИЯ ЧЕЛОВЕКОЧИТАЕМОГО НАЗВАНИЯ МЕТОДА УВЕДОМЛЕНИЯ
   const getNotifyMethodName = (method: string) => {
     const methods: { [key: string]: string } = {
-      email: 'Email',
-      telegram: 'Telegram',
-      sms: 'SMS'
+      email: t('rewardsPopup.notifyMethods.email'),
+      telegram: t('rewardsPopup.notifyMethods.telegram'),
+      sms: t('rewardsPopup.notifyMethods.sms')
     };
     return methods[method] || method;
   };
@@ -127,27 +128,27 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
   const contactFieldConfig = useCallback(() => {
     const configs = {
       telegram: {
-        label: 'Ваш Telegram username',
-        placeholder: '@username',
+        label: t('rewardsPopup.contactFields.telegram.label'),
+        placeholder: t('rewardsPopup.contactFields.telegram.placeholder'),
         type: 'text' as const,
         disabled: false,
       },
       sms: {
-        label: 'Ваш номер телефона',
-        placeholder: '+7 (999) 123-45-67',
+        label: t('rewardsPopup.contactFields.sms.label'),
+        placeholder: t('rewardsPopup.contactFields.sms.placeholder'),
         type: 'tel' as const,
         disabled: false,
       },
       email: {
-        label: 'Email для уведомлений',
-        placeholder: 'your@email.com',
+        label: t('rewardsPopup.contactFields.email.label'),
+        placeholder: t('rewardsPopup.contactFields.email.placeholder'),
         type: 'email' as const,
         disabled: true,
       }
     };
     
     return configs[formData.notifyMethod as keyof typeof configs] || configs.email;
-  }, [formData.notifyMethod]);
+  }, [formData.notifyMethod, t]);
 
   useEffect(() => {
     if (formData.notifyMethod === 'email') {
@@ -195,44 +196,44 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
     const newErrors: FormErrors = {};
     
     if (!formData.email.trim()) {
-      newErrors.email = 'Email обязателен';
+      newErrors.email = t('rewardsPopup.validation.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Введите корректный email';
+      newErrors.email = t('rewardsPopup.validation.emailInvalid');
     }
     
-    if (!formData.disease.trim()) newErrors.disease = 'Укажите ваше заболевание';
-    if (!formData.problem.trim()) newErrors.problem = 'Опишите проблему, которую хотите решить';
+    if (!formData.disease.trim()) newErrors.disease = t('rewardsPopup.validation.diseaseRequired');
+    if (!formData.problem.trim()) newErrors.problem = t('rewardsPopup.validation.problemRequired');
     
     if (!formData.contactDetails.trim()) {
-      newErrors.contactDetails = 'Это поле обязательно';
+      newErrors.contactDetails = t('rewardsPopup.validation.contactRequired');
     } else {
       switch (formData.notifyMethod) {
         case 'telegram':
           if (!formData.contactDetails.startsWith('@')) {
-            newErrors.contactDetails = 'Telegram username должен начинаться с @';
+            newErrors.contactDetails = t('rewardsPopup.validation.telegramInvalid');
           }
           break;
         case 'sms':
           const phoneRegex = /^\+7\s?\(\d{3}\)\s?\d{3}-\d{2}-\d{2}$/;
           if (!phoneRegex.test(formData.contactDetails)) {
-            newErrors.contactDetails = 'Введите номер в формате +7 (999) 123-45-67';
+            newErrors.contactDetails = t('rewardsPopup.validation.phoneInvalid');
           }
           break;
         case 'email':
           if (!/\S+@\S+\.\S+/.test(formData.contactDetails)) {
-            newErrors.contactDetails = 'Введите корректный email';
+            newErrors.contactDetails = t('rewardsPopup.validation.emailInvalid');
           }
           break;
       }
     }
     
     if (!formData.agreeTerms) {
-      newErrors.agreeTerms = 'Необходимо согласие с условиями';
+      newErrors.agreeTerms = t('rewardsPopup.validation.agreeRequired');
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+  }, [formData, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -298,10 +299,12 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
       });
       
       toast({
-        title: referralData.isReferral ? "🎉 Реферальная регистрация!" : "🎉 Успешная подписка!",
+        title: referralData.isReferral 
+          ? t('rewardsPopup.toast.referralSuccess.title') 
+          : t('rewardsPopup.toast.success.title'),
         description: referralData.isReferral 
-          ? "Вы получили бонусы за регистрацию по приглашению" 
-          : "Вы получили бонусы за регистрацию в лист ожидания",
+          ? t('rewardsPopup.toast.referralSuccess.description')
+          : t('rewardsPopup.toast.success.description'),
         variant: "default",
       });
       
@@ -315,7 +318,7 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
       
     } catch (error) {
       console.error('💥 Waitlist submission error:', error);
-      setErrors({ submit: 'Ошибка при подписке. Попробуйте еще раз.' });
+      setErrors({ submit: t('rewardsPopup.validation.submitError') });
     } finally {
       setIsLoading(false);
       console.log('🏁 Waitlist submission completed');
@@ -356,7 +359,9 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
                     <Gift size={24} className="text-white" />
                   </div>
                   
-                  <h2 className="text-xl font-bold text-gray-900">Ваш профиль</h2>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {t('rewardsPopup.profile.title')}
+                  </h2>
                   <p className="text-gray-600 mt-1 text-sm">
                     {progress.userEmail}
                   </p>
@@ -365,21 +370,23 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
                 <div className="p-6">
                   <div className="text-center space-y-4">
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <p className="text-green-800 font-medium">✅ Вы в листе ожидания!</p>
+                      <p className="text-green-800 font-medium">
+                        {t('rewardsPopup.profile.waitlistStatus')}
+                      </p>
                       <p className="text-green-600 text-sm mt-1">
-                        Мы уведомим вас о запуске первыми
+                        {t('rewardsPopup.profile.notificationText')}
                       </p>
                     </div>
                     
                     <p className="text-gray-700 text-sm">
-                      Ваш прогресс сохранен. Продолжайте исследовать возможности Remedia!
+                      {t('rewardsPopup.profile.progressSaved')}
                     </p>
                     
                     <Button 
                       onClick={onClose}
                       className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3"
                     >
-                      Продолжить
+                      {t('rewardsPopup.profile.continueButton')}
                     </Button>
                   </div>
                 </div>
@@ -425,10 +432,10 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
                 </div>
                 
                 <h2 className="text-xl font-bold text-gray-900">
-                  Получите бонусы!
+                  {t('rewardsPopup.title')}
                 </h2>
                 <p className="text-gray-600 mt-1 text-sm">
-                  Подпишитесь на лист ожидания и получите +20% к прогрессу
+                  {t('rewardsPopup.subtitle')}
                 </p>
               </div>
 
@@ -436,12 +443,12 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="waitlist-email" className="text-sm font-medium mb-2 block">
-                      Email *
+                      {t('rewardsPopup.form.email.label')} *
                     </Label>
                     <Input
                       id="waitlist-email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder={t('rewardsPopup.form.email.placeholder')}
                       value={formData.email}
                       onChange={(e) => updateField('email', e.target.value)}
                       disabled={isLoading}
@@ -454,12 +461,12 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
 
                   <div>
                     <Label htmlFor="waitlist-disease" className="text-sm font-medium mb-2 block">
-                      Ваше заболевание *
+                      {t('rewardsPopup.form.disease.label')} *
                     </Label>
                     <Input
                       id="waitlist-disease"
                       type="text"
-                      placeholder="Например: ревматоидный артрит, диабет и т.д."
+                      placeholder={t('rewardsPopup.form.disease.placeholder')}
                       value={formData.disease}
                       onChange={(e) => updateField('disease', e.target.value)}
                       disabled={isLoading}
@@ -472,12 +479,12 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
 
                   <div>
                     <Label htmlFor="waitlist-problem" className="text-sm font-medium mb-2 block">
-                      Какую проблему вы хотите решить с Remedia? *
+                      {t('rewardsPopup.form.problem.label')} *
                     </Label>
                     <Input
                       id="waitlist-problem"
                       type="text"
-                      placeholder="Например: контроль боли, отслеживание симптомов, напоминание о приеме лекарств и т.д."
+                      placeholder={t('rewardsPopup.form.problem.placeholder')}
                       value={formData.problem}
                       onChange={(e) => updateField('problem', e.target.value)}
                       disabled={isLoading}
@@ -490,7 +497,7 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
 
                   <div>
                     <Label htmlFor="waitlist-notify" className="text-sm font-medium mb-2 block">
-                      Где Вас уведомить о выходе продукта? *
+                      {t('rewardsPopup.form.notifyMethod.label')} *
                     </Label>
                     <Select 
                       value={formData.notifyMethod} 
@@ -498,12 +505,18 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
                       disabled={isLoading}
                     >
                       <SelectTrigger className={`w-full ${errors.notifyMethod ? 'border-red-500' : ''}`}>
-                        <SelectValue placeholder="Выберите способ уведомления" />
+                        <SelectValue placeholder={t('rewardsPopup.form.notifyMethod.placeholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="telegram">Telegram</SelectItem>
-                        <SelectItem value="sms">SMS</SelectItem>
+                        <SelectItem value="email">
+                          {t('rewardsPopup.notifyMethods.email')}
+                        </SelectItem>
+                        <SelectItem value="telegram">
+                          {t('rewardsPopup.notifyMethods.telegram')}
+                        </SelectItem>
+                        <SelectItem value="sms">
+                          {t('rewardsPopup.notifyMethods.sms')}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     {errors.notifyMethod && (
@@ -529,7 +542,7 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
                     )}
                     {formData.notifyMethod === 'email' && (
                       <p className="text-xs text-gray-500 mt-1">
-                        Будет использован ваш email
+                        {t('rewardsPopup.form.contact.emailNote')}
                       </p>
                     )}
                   </div>
@@ -543,7 +556,7 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
                       className={`mt-1 ${errors.agreeTerms ? 'border-red-500' : ''}`}
                     />
                     <Label htmlFor="waitlist-agree" className="text-sm leading-relaxed">
-                      Я соглашаюсь с условиями обработки персональных данных и хочу получать уведомления о выходе продукта *
+                      {t('rewardsPopup.form.agreeTerms.label')} *
                     </Label>
                   </div>
                   {errors.agreeTerms && (
@@ -551,11 +564,13 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
                   )}
 
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-blue-800 font-medium text-sm">🎁 Вы получите:</p>
+                    <p className="text-blue-800 font-medium text-sm">
+                      {t('rewardsPopup.bonuses.title')}
+                    </p>
                     <ul className="text-blue-600 text-xs mt-1 space-y-1">
-                      <li>• +20% к общему прогрессу</li>
-                      <li>• Уведомление о запуске первыми</li>
-                      <li>• Специальные условия при старте</li>
+                      <li>• {t('rewardsPopup.bonuses.items.0')}</li>
+                      <li>• {t('rewardsPopup.bonuses.items.1')}</li>
+                      <li>• {t('rewardsPopup.bonuses.items.2')}</li>
                     </ul>
                   </div>
 
@@ -567,12 +582,12 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
                     {isLoading ? (
                       <span className="flex items-center gap-2">
                         <Loader2 size={16} className="animate-spin" />
-                        Подписка...
+                        {t('rewardsPopup.form.submit.loading')}
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
                         <Gift size={16} />
-                        Подписаться и получить бонусы
+                        {t('rewardsPopup.form.submit.default')}
                       </span>
                     )}
                   </Button>
@@ -582,7 +597,7 @@ ${referralData.utmSource ? `📊 UTM: ${referralData.utmSource}` : ''}
                   )}
 
                   <p className="text-xs text-gray-500 text-center">
-                    Подписываясь, вы сохраняете прогресс и получаете бонусы
+                    {t('rewardsPopup.form.footer')}
                   </p>
                 </div>
               </form>

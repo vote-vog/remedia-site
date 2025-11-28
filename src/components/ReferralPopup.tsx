@@ -6,24 +6,28 @@ import { useState, useEffect } from "react";
 import { Copy, Check, Share2, Gift, Smartphone, Users } from "lucide-react";
 import { useProductActions } from '@/hooks/useProductActions';
 import { useProgress } from '@/hooks/useProgress';
+import { useLanguage } from '@/hooks/useLanguage';
 
 interface ReferralPopupProps {
   isOpen: boolean;
   onClose: () => void;
   referralCode: string;
   userEmail?: string;
+  onNativeShare?: (referralLink: string) => Promise<void>;
 }
 
 export const ReferralPopup = ({ 
   isOpen, 
   onClose, 
   referralCode,
-  userEmail 
+  userEmail,
+  onNativeShare 
 }: ReferralPopupProps) => {
   const [copied, setCopied] = useState(false);
   const [isWebShareSupported, setIsWebShareSupported] = useState(false);
   const { completeMilestone } = useProductActions();
-  const { progress } = useProgress(); // 🎯 ДОБАВЛЯЕМ ДЛЯ ПОЛУЧЕНИЯ ДАННЫХ
+  const { progress } = useProgress();
+  const { t } = useLanguage();
   
   const referralLink = `${window.location.origin}?ref=${referralCode}`;
 
@@ -50,8 +54,8 @@ export const ReferralPopup = ({
   // 🔥 УНИВЕРСАЛЬНОЕ РАСШАРИВАНИЕ ЧЕРЕЗ WEB SHARE API
   const handleNativeShare = async () => {
     const shareData = {
-      title: 'Remedia - приложение для управления здоровьем',
-      text: 'Привет! Посмотри крутое приложение для управления здоровьем. Оно помогает отслеживать симптомы, принимать лекарства и консультироваться с AI-помощником!',
+      title: t('referralPopup.share.title'),
+      text: t('referralPopup.share.text'),
       url: referralLink,
     };
 
@@ -66,13 +70,16 @@ export const ReferralPopup = ({
     } catch (err) {
       if (err.name !== 'AbortError') {
         console.error('Ошибка расшаривания:', err);
+        // Если есть внешний обработчик, используем его
+        if (onNativeShare) {
+          await onNativeShare(referralLink);
+        }
       }
     }
   };
 
   // 🔥 ФОЛБЭК ДЛЯ СТАРЫХ БРАУЗЕРОВ
   const handleFallbackShare = () => {
-    // Показываем ручные варианты если Web Share API не поддерживается
     copyToClipboard();
   };
 
@@ -88,14 +95,14 @@ export const ReferralPopup = ({
         <DialogHeader>
           <DialogTitle className="text-center flex items-center justify-center gap-2">
             <Share2 className="w-6 h-6 text-purple-500" />
-            Поделитесь с друзьями!
+            {t('referralPopup.title')}
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-4">
-              Расскажите друзьям о Remedia и получите +20% к прогрессу за каждое распространение!
+              {t('referralPopup.description')}
             </p>
           </div>
 
@@ -103,16 +110,22 @@ export const ReferralPopup = ({
           <div className="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-lg">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-500" />
-              <span>Распространений: {progress.referralEvents || 0}</span>
+              <span>
+                {t('referralPopup.stats.shares', { count: progress.referralEvents || 0 })}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Gift className="w-4 h-4 text-green-500" />
-              <span>+{(progress.referralEvents || 0) * 20}% к прогрессу</span>
+              <span>
+                {t('referralPopup.stats.progress', { percent: (progress.referralEvents || 0) * 20 })}
+              </span>
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Ваша реферальная ссылка:</label>
+            <label className="text-sm font-medium">
+              {t('referralPopup.referralLink.label')}
+            </label>
             <div className="flex gap-2">
               <Input 
                 value={referralLink} 
@@ -129,7 +142,9 @@ export const ReferralPopup = ({
               </Button>
             </div>
             {copied && (
-              <p className="text-green-600 text-xs">✅ Ссылка скопирована! +20% к прогрессу</p>
+              <p className="text-green-600 text-xs">
+                {t('referralPopup.referralLink.copied')}
+              </p>
             )}
           </div>
 
@@ -142,7 +157,7 @@ export const ReferralPopup = ({
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3"
               >
                 <Share2 className="w-4 h-4 mr-2" />
-                Поделиться через приложение
+                {t('referralPopup.share.nativeButton')}
               </Button>
             ) : (
               // 🔥 ФОЛБЭК ДЛЯ СТАРЫХ БРАУЗЕРОВ
@@ -152,32 +167,34 @@ export const ReferralPopup = ({
                 className="w-full py-3"
               >
                 <Smartphone className="w-4 h-4 mr-2" />
-                Скопировать ссылку для расшаривания
+                {t('referralPopup.share.fallbackButton')}
               </Button>
             )}
 
             <p className="text-xs text-muted-foreground text-center">
               {isWebShareSupported 
-                ? 'Откроется меню с доступными приложениями для расшаривания'
-                : 'Скопируйте ссылку и поделитесь в любом мессенджере'
+                ? t('referralPopup.share.nativeDescription')
+                : t('referralPopup.share.fallbackDescription')
               }
             </p>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-blue-800 font-medium text-sm mb-2">🎁 Что вы получаете:</p>
+            <p className="text-blue-800 font-medium text-sm mb-2">
+              {t('referralPopup.bonuses.title')}
+            </p>
             <ul className="text-blue-600 text-xs space-y-1">
-              <li>• <strong>+20% к прогрессу за каждое распространение</strong></li>
-              <li>• <strong>Без ограничений</strong> - чем больше делитесь, тем выше прогресс</li>
-              <li>• Помогаете друзьям и родным заботиться о здоровье</li>
-              <li>• Уже при первом скачивании Вы получите бонус за каждого присоединившегося друга</li>
-              <li>• Чем выше Ваш прогресс, тем больше бонусов Вы получите при скачивании</li>
+              <li>• <strong>{t('referralPopup.bonuses.items.0')}</strong></li>
+              <li>• <strong>{t('referralPopup.bonuses.items.1')}</strong></li>
+              <li>• {t('referralPopup.bonuses.items.2')}</li>
+              <li>• {t('referralPopup.bonuses.items.3')}</li>
+              <li>• {t('referralPopup.bonuses.items.4')}</li>
             </ul>
           </div>
 
           <div className="flex justify-end pt-2">
             <Button onClick={onClose} variant="outline" size="sm">
-              Закрыть
+              {t('referralPopup.closeButton')}
             </Button>
           </div>
         </div>

@@ -6,12 +6,14 @@ import { ReferralPopup } from "@/components/ReferralPopup";
 import { RewardsPopup } from "@/components/RewardsPopup";
 import { Share2, Crown, Users, Rocket, Star, Sparkles, Zap, Trophy, Gem, Award } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export const WaitlistSection = () => {
   const { count } = useGlobalCounter();
   const { progress, handleOpenRewardsPopup, produceWaitlist } = useProgress();
   const [isReferralPopupOpen, setIsReferralPopupOpen] = React.useState(false);
   const [isRewardsPopupOpen, setIsRewardsPopupOpen] = React.useState(false);
+  const { t } = useLanguage();
   
   // 🔥 УПРОЩЕННЫЕ СОСТОЯНИЯ ДЛЯ АНИМАЦИИ
   const [showTransition, setShowTransition] = useState(false);
@@ -99,8 +101,8 @@ export const WaitlistSection = () => {
   // 🔥 УЛУЧШЕННАЯ ОБРАБОТКА WEB SHARE API
   const handleNativeShare = useCallback(async (referralLink: string) => {
     const shareData = {
-      title: 'Remedia - приложение для управления здоровьем',
-      text: 'Привет! Посмотри крутое приложение для управления здоровьем. Оно помогает отслеживать симптомы, принимать лекарства и консультироваться с AI-помощником!',
+      title: t('waitlist.share.title'),
+      text: t('waitlist.share.text'),
       url: referralLink,
     };
 
@@ -123,7 +125,7 @@ export const WaitlistSection = () => {
       await navigator.clipboard.writeText(referralLink);
       console.log('📋 Автоматически скопировано в буфер');
     }
-  }, []);
+  }, [t]);
 
   // 🔥 КРАСИВАЯ АНИМАЦИЯ ПЕРЕХОДА С ПАЛИТРОЙ БРЕНДА
   const startBeautifulTransition = useCallback(() => {
@@ -235,11 +237,11 @@ export const WaitlistSection = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.8 }}
         >
-          Добро пожаловать в основатели!
+          {t('waitlist.transition.welcome')}
         </motion.h3>
       </motion.div>
     </motion.div>
-  ), []);
+  ), [t]);
 
   // 🔥 АНИМАЦИЯ ПОЯВЛЕНИЯ КОНТЕНТА - брендовая палитра
   const ContentReveal = useMemo(() => () => (
@@ -367,7 +369,9 @@ export const WaitlistSection = () => {
               }}
             >
               <Award className="w-5 h-5 text-mint-100 dark:text-[#004243]" />
-              <span className="tracking-widest text-mint-50 dark:text-[#004243] font-bold">ОСНОВАТЕЛЬ REMEDIA</span>
+              <span className="tracking-widest text-mint-50 dark:text-[#004243] font-bold">
+                {t('waitlist.founder.badge')}
+              </span>
               <Gem className="w-5 h-5 text-mint-100 dark:text-[#004243]" />
             </motion.div>
 
@@ -382,9 +386,9 @@ export const WaitlistSection = () => {
               }}
             >
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-slate-800 dark:text-white mb-6 leading-tight">
-                Добро пожаловать в{" "}
+                {t('waitlist.founder.title.line1')}{" "}
                 <span className="bg-gradient-to-r from-mint-600 to-teal-700 dark:from-[#54F5DF] dark:to-teal-400 bg-clip-text text-transparent">
-                  сообщество
+                  {t('waitlist.founder.title.highlight')}
                 </span>
               </h1>
               <motion.span 
@@ -393,7 +397,7 @@ export const WaitlistSection = () => {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: showTransition ? 2.7 : 0.8 }}
               >
-                создающих будущее медицины
+                {t('waitlist.founder.subtitle')}
               </motion.span>
             </motion.div>
             
@@ -407,8 +411,7 @@ export const WaitlistSection = () => {
                 ease: "easeOut"
               }}
             >
-              Теперь вы — часть <strong className="text-slate-800 dark:text-white font-semibold">эксклюзивного сообщества</strong>, 
-              формирующего новую эру персонализированного здравоохранения.
+              {t('waitlist.founder.description')}
             </motion.p>
 
             {/* 🔥 УЛУЧШЕННЫЕ КАРТОЧКИ СТАТИСТИКИ */}
@@ -433,9 +436,11 @@ export const WaitlistSection = () => {
                 <div className="w-16 h-16 bg-gradient-to-br from-mint-400 to-mint-600 dark:from-[#54F5DF] dark:to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-shadow duration-500">
                   <Crown className="text-white dark:text-[#004243] w-7 h-7" />
                 </div>
-                <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white">Статус Основателя</h3>
+                <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white">
+                  {t('waitlist.founder.cards.status.title')}
+                </h3>
                 <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
-                  Пожизненный доступ к эксклюзивным функциям и прямое влияние на развитие платформы
+                  {t('waitlist.founder.cards.status.description')}
                 </p>
               </motion.div>
 
@@ -449,7 +454,9 @@ export const WaitlistSection = () => {
                 <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-400 dark:to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-shadow duration-500">
                   <Users className="text-white dark:text-[#004243] w-7 h-7" />
                 </div>
-                <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white">Вы среди первых</h3>
+                <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white">
+                  {t('waitlist.founder.cards.community.title')}
+                </h3>
                 <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
                   <motion.strong 
                     className="text-3xl text-teal-600 dark:text-[#54F5DF] block mb-2"
@@ -459,7 +466,7 @@ export const WaitlistSection = () => {
                   >
                     {count + 1}+
                   </motion.strong>
-                  человек уже создают будущее медицины вместе с нами
+                  {t('waitlist.founder.cards.community.description')}
                 </p>
               </motion.div>
 
@@ -473,9 +480,11 @@ export const WaitlistSection = () => {
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-shadow duration-500">
                   <Rocket className="text-white dark:text-[#004243] w-7 h-7" />
                 </div>
-                <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white">Ваша роль</h3>
+                <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-white">
+                  {t('waitlist.founder.cards.mission.title')}
+                </h3>
                 <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
-                  Вы одновременно и Проповедник, и Строитель новой системы здравоохранения
+                  {t('waitlist.founder.cards.mission.description')}
                 </p>
               </motion.div>
             </motion.div>
@@ -497,7 +506,7 @@ export const WaitlistSection = () => {
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <p className="text-sm text-mint-800 dark:text-[#54F5DF] font-medium mb-3 text-center">
-                  💎 Расширяйте наше сообщество основателей:
+                  {t('waitlist.founder.expandCommunity')}
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-mint-700 dark:text-teal-300">
                   <motion.span
@@ -505,12 +514,12 @@ export const WaitlistSection = () => {
                     animate={{ scale: 1 }}
                     transition={{ delay: showTransition ? 3.4 : 1.7 }}
                   >
-                    <strong>{count + 1}+</strong> основателей
+                    <strong>{count + 1}+</strong> {t('waitlist.founder.foundersCount')}
                   </motion.span>
                   <span className="text-mint-400 dark:text-teal-500">•</span>
-                  <span><strong>7</strong> врачей и специалистов</span>
+                  <span><strong>7</strong> {t('waitlist.founder.doctorsCount')}</span>
                   <span className="text-mint-400 dark:text-teal-500">•</span>
-                  <span><strong>2</strong> медицинские организации</span>
+                  <span><strong>2</strong> {t('waitlist.founder.organizationsCount')}</span>
                 </div>
               </motion.div>
 
@@ -538,13 +547,17 @@ export const WaitlistSection = () => {
                       {!progress.userEmail ? (
                         <>
                           <Sparkles className="w-6 h-6" />
-                          <span className="text-base tracking-wider">Попробовать</span>
+                          <span className="text-base tracking-wider">
+                            {t('waitlist.founder.cta.try')}
+                          </span>
                           <Zap className="w-6 h-6" />
                         </>
                       ) : (
                         <>
                           <Share2 className="w-6 h-6" />
-                          <span className="text-base tracking-wider">Пригласить друзей</span>
+                          <span className="text-base tracking-wider">
+                            {t('waitlist.founder.cta.invite')}
+                          </span>
                           <Trophy className="w-6 h-6" />
                         </>
                       )}
@@ -560,14 +573,14 @@ export const WaitlistSection = () => {
                 >
                   <p className="text-sm text-slate-600 dark:text-teal-200 text-center font-light">
                     {!progress.userEmail 
-                      ? "Присоединяйтесь к закрытой группе первых пользователей"
-                      : "Помогите друзьям и близким обрести контроль над здоровьем"
+                      ? t('waitlist.founder.cta.subtitle.join')
+                      : t('waitlist.founder.cta.subtitle.invite')
                     }
                   </p>
                   <p className="text-xs text-slate-500 dark:text-teal-300 text-center">
                     {!progress.userEmail 
-                      ? "Получите пожизненный статус основателя и влияние на развитие"
-                      : "Получайте +20% к прогрессу за каждого приглашенного друга"
+                      ? t('waitlist.founder.cta.note.join')
+                      : t('waitlist.founder.cta.note.invite')
                     }
                   </p>
                 </motion.div>
@@ -596,14 +609,14 @@ export const WaitlistSection = () => {
                   >
                     <Star className="w-6 h-6 text-mint-500 dark:text-[#54F5DF]" />
                   </motion.div>
-                  Ваши привилегии
+                  {t('waitlist.founder.privileges.title')}
                 </h3>
                 <ul className="text-sm text-slate-600 dark:text-teal-200 space-y-3">
                   {[
-                    { icon: Gem, text: "Пожизненный статус Foundation Member", color: "text-mint-500 dark:text-[#54F5DF]" },
-                    { icon: Zap, text: "Участие в закрытых AMA с командой", color: "text-teal-500 dark:text-teal-400" },
-                    { icon: Rocket, text: "Ранний доступ ко всем новым функциям", color: "text-blue-500 dark:text-blue-400" },
-                    { icon: Crown, text: "Влияние на roadmap продукта", color: "text-mint-500 dark:text-[#54F5DF]" }
+                    { icon: Gem, text: t('waitlist.founder.privileges.items.0'), color: "text-mint-500 dark:text-[#54F5DF]" },
+                    { icon: Zap, text: t('waitlist.founder.privileges.items.1'), color: "text-teal-500 dark:text-teal-400" },
+                    { icon: Rocket, text: t('waitlist.founder.privileges.items.2'), color: "text-blue-500 dark:text-blue-400" },
+                    { icon: Crown, text: t('waitlist.founder.privileges.items.3'), color: "text-mint-500 dark:text-[#54F5DF]" }
                   ].map((item, index) => (
                     <motion.li 
                       key={index}
@@ -630,13 +643,13 @@ export const WaitlistSection = () => {
                   >
                     <Rocket className="w-6 h-6 text-teal-500 dark:text-teal-400" />
                   </motion.div>
-                  Что будет дальше?
+                  {t('waitlist.founder.timeline.title')}
                 </h3>
                 <ul className="text-sm text-slate-600 dark:text-teal-200 space-y-3">
                   {[
-                    { marker: "→", text: "Следующие 2 недели: SechenovTech Acceleration DemoDay", color: "text-mint-500 dark:text-[#54F5DF]" },
-                    { marker: "→", text: "Январь: Закрытый бета-тест с вашим участием", color: "text-teal-500 dark:text-teal-400" },
-                    { marker: "→", text: "3 месяца: Цифровой двойник здоровья", color: "text-blue-500 dark:text-blue-400" }
+                    { marker: "→", text: t('waitlist.founder.timeline.items.0'), color: "text-mint-500 dark:text-[#54F5DF]" },
+                    { marker: "→", text: t('waitlist.founder.timeline.items.1'), color: "text-teal-500 dark:text-teal-400" },
+                    { marker: "→", text: t('waitlist.founder.timeline.items.2'), color: "text-blue-500 dark:text-blue-400" }
                   ].map((item, index) => (
                     <motion.li 
                       key={index}
@@ -671,9 +684,7 @@ export const WaitlistSection = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: showTransition ? 4.7 : 3.2 }}
               >
-                <strong className="font-semibold">Благодарим за доверие нашей миссии.</strong> Вместе мы создаем среду, 
-                где управление здоровьем становится осознанным и управляемым процессом. 
-                Ваш вклад — неотъемлемая часть этих изменений.
+                {t('waitlist.founder.finalMessage')}
               </motion.p>
             </motion.div>
           </div>
@@ -721,7 +732,7 @@ export const WaitlistSection = () => {
             transition={{ duration: 0.8 }}
           >
             <Rocket className="w-4 h-4" />
-            <span>СТАНЬТЕ ЧАСТЬЮ ПЕРЕМЕН</span>
+            <span>{t('waitlist.initial.badge')}</span>
           </motion.div>
 
           <motion.h1 
@@ -730,11 +741,13 @@ export const WaitlistSection = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.9, delay: 0.2 }}
           >
-            Попробовав приложение.
+            {t('waitlist.initial.title.line1')}
             <br />
-            Вы <span className="bg-gradient-to-r from-teal-600 to-mint-700 dark:from-[#54F5DF] dark:to-teal-400 bg-clip-text text-transparent">
-              создаете будущее
-            </span> здравоохранения.
+            {t('waitlist.initial.title.line2')}{" "}
+            <span className="bg-gradient-to-r from-teal-600 to-mint-700 dark:from-[#54F5DF] dark:to-teal-400 bg-clip-text text-transparent">
+              {t('waitlist.initial.title.highlight')}
+            </span>{" "}
+            {t('waitlist.initial.title.line3')}
           </motion.h1>
           
           <motion.p 
@@ -743,9 +756,7 @@ export const WaitlistSection = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.9, delay: 0.4 }}
           >
-            Присоединяйтесь к сообществу первых пользователей, которые помогают нам построить{" "}
-            <strong className="text-slate-800 dark:text-white">первый в мире "цифровой двойник" здоровья</strong> — 
-            систему, которая учится на вашем опыте и делает медицину персонализированной для всех.
+            {t('waitlist.initial.description')}
           </motion.p>
 
           {/* Упрощенные ценности */}
@@ -764,9 +775,11 @@ export const WaitlistSection = () => {
               <div className="w-12 h-12 bg-gradient-to-br from-mint-400 to-mint-600 dark:from-[#54F5DF] dark:to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
                 <Sparkles className="w-6 h-6 text-white dark:text-[#004243]" />
               </div>
-              <h3 className="font-semibold mb-3 text-slate-800 dark:text-white">Польза для вас</h3>
+              <h3 className="font-semibold mb-3 text-slate-800 dark:text-white">
+                {t('waitlist.initial.values.personal.title')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
-                Начните понимать свое тело. Получайте персонализированные инсайты о том, что действительно влияет на ваше самочувствие.
+                {t('waitlist.initial.values.personal.description')}
               </p>
             </motion.div>
 
@@ -778,9 +791,11 @@ export const WaitlistSection = () => {
               <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-400 dark:to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
                 <Users className="w-6 h-6 text-white dark:text-[#004243]" />
               </div>
-              <h3 className="font-semibold mb-3 text-slate-800 dark:text-white">Влияние на продукт</h3>
+              <h3 className="font-semibold mb-3 text-slate-800 dark:text-white">
+                {t('waitlist.initial.values.community.title')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
-                Ваш голос будет услышан. Помогайте нам создавать функции, которые действительно решают ваши проблемы.
+                {t('waitlist.initial.values.community.description')}
               </p>
             </motion.div>
 
@@ -792,9 +807,11 @@ export const WaitlistSection = () => {
               <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
                 <Trophy className="w-6 h-6 text-white dark:text-[#004243]" />
               </div>
-              <h3 className="font-semibold mb-3 text-slate-800 dark:text-white">Изменение системы</h3>
+              <h3 className="font-semibold mb-3 text-slate-800 dark:text-white">
+                {t('waitlist.initial.values.legacy.title')}
+              </h3>
               <p className="text-sm text-slate-600 dark:text-teal-200 leading-relaxed">
-                Ваш опыт поможет тысячам других людей. Вместе мы создаем медицину, которая слушает и понимает пациента.
+                {t('waitlist.initial.values.legacy.description')}
               </p>
             </motion.div>
           </motion.div>
@@ -808,14 +825,14 @@ export const WaitlistSection = () => {
           >
             <div className="bg-gradient-to-r from-mint-50 to-teal-50 dark:from-[#54F5DF]/10 dark:to-teal-500/10 border border-mint-200 dark:border-[#54F5DF]/30 rounded-2xl p-6">
               <p className="text-sm text-mint-800 dark:text-[#54F5DF] font-medium mb-3 text-center">
-                💎 Уже формируют будущее с нами:
+                {t('waitlist.initial.socialProof.title')}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-mint-700 dark:text-teal-300">
-                <span><strong>{count}+</strong> первых пользователей</span>
+                <span><strong>{count}+</strong> {t('waitlist.initial.socialProof.users')}</span>
                 <span className="text-mint-400 dark:text-teal-500">•</span>
-                <span><strong>7</strong> врачей и специалистов</span>
+                <span><strong>7</strong> {t('waitlist.initial.socialProof.doctors')}</span>
                 <span className="text-mint-400 dark:text-teal-500">•</span>
-                <span><strong>2</strong> медицинские организации</span>
+                <span><strong>2</strong> {t('waitlist.initial.socialProof.organizations')}</span>
               </div>
             </div>
 
@@ -837,13 +854,17 @@ export const WaitlistSection = () => {
                     {!progress.userEmail ? (
                       <>
                         <Rocket className="w-5 h-5" />
-                        <span className="text-base tracking-wide">Стать Основателем</span>
+                        <span className="text-base tracking-wide">
+                          {t('waitlist.initial.cta.becomeFounder')}
+                        </span>
                         <Sparkles className="w-5 h-5" />
                       </>
                     ) : (
                       <>
                         <Share2 className="w-5 h-5" />
-                        <span className="text-base tracking-wide">Пригласить друзей</span>
+                        <span className="text-base tracking-wide">
+                          {t('waitlist.initial.cta.inviteFriends')}
+                        </span>
                         <Zap className="w-5 h-5" />
                       </>
                     )}
@@ -854,14 +875,14 @@ export const WaitlistSection = () => {
               <div className="space-y-2">
                 <p className="text-sm text-slate-600 dark:text-teal-200 text-center font-light">
                   {!progress.userEmail 
-                    ? "Присоединяйтесь к закрытой группе первых пользователей"
-                    : "Помогите друзьям и близким обрести контроль над здоровьем"
+                    ? t('waitlist.initial.cta.subtitle.join')
+                    : t('waitlist.initial.cta.subtitle.invite')
                   }
                 </p>
                 <p className="text-xs text-slate-500 dark:text-teal-300 text-center">
                   {!progress.userEmail 
-                    ? "Получите пожизненный статус основателя и влияние на развитие"
-                    : "Получайте +20% к прогрессу за каждого приглашенного друга"
+                    ? t('waitlist.initial.cta.note.join')
+                    : t('waitlist.initial.cta.note.invite')
                   }
                 </p>
               </div>
@@ -876,8 +897,8 @@ export const WaitlistSection = () => {
             transition={{ duration: 0.8, delay: 1.0 }}
           >
             <p className="text-sm text-teal-800 dark:text-[#54F5DF] text-center font-light leading-relaxed">
-              <strong className="font-medium">Наша миссия:</strong> Вернуть человеку с хроническим заболеванием чувство контроля над собственной жизнью. 
-              Мы начинаем с простого дневника, но строим будущее, где здоровье — это не лотерея, а осознанный выбор.
+              <strong className="font-medium">{t('waitlist.initial.mission.title')}</strong>{" "}
+              {t('waitlist.initial.mission.description')}
             </p>
           </motion.div>
         </div>

@@ -1,5 +1,5 @@
-// components/BudgetCalculator.tsx
-import { useState, useEffect, useRef } from "react";
+// src/components/BudgetCalculator.tsx
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,35 +7,54 @@ import { ChatMessage, Message } from "./ChatMessage";
 import { useProductActions } from "@/hooks/useProductActions";
 import { useToast } from "@/hooks/use-toast";
 import { useEngagementTracker } from "@/hooks/useEngagementTracker";
+import { useLanguage } from "@/hooks/useLanguage";
 
-const features = [
-  { id: 1, name: "💬 Естественный диалог с ИИ", price: 100, type: "feature" },
-  { id: 2, name: "📊 Запись данных в формы и графики", price: 100, type: "feature" },
-  { id: 3, name: "🔍 Умная аналитика взаимосвязей", price: 200, type: "feature" },
-  { id: 4, name: "🔔 Уведомления и напоминания", price: 50, type: "feature" },
-  { id: 5, name: "⌚ Данные с носимых устройств", price: 150, type: "feature" },
-  { id: 6, name: "👨‍⚕️ Поддержка врача в чате", price: 200, type: "feature" }
-];
-
-const temptations = [
-  { id: 7, name: "🚌 Проезд в автобусе", price: 50, type: "temptation" },
-  { id: 8, name: "☕ Кружка кофе", price: 250, type: "temptation" },
-  { id: 9, name: "🎬 Подписка на стриминг", price: 300, type: "temptation" },
-  { id: 10, name: "🥔 Пачка чипсов", price: 150, type: "temptation" }
-];
-
-const allOptions = [...features, ...temptations];
-
-// 🔥 ЦЕНЫ ДЛЯ КРЕДИТОВАНИЯ
-const PRICES = {
-  TOTAL_FUNCTIONALITY: 800, // Весь основной функционал
-  CREDIT_DEDUCTION: 50      // Фиксированный вычет
+// 🔥 ОПТИМИЗИРОВАННАЯ КОНФИГУРАЦИЯ ВАЛЮТ
+const CURRENCY_CONFIG = {
+  rub: {
+    symbol: '₽',
+    baseBudget: 500,
+    credit: {
+      totalFunctionality: 800,
+      deduction: 50,
+      eligibility: {
+        maxTemptations: 1,
+        minFeatures: 1
+      }
+    },
+    // Цены в рублях (оригинальные)
+    prices: {
+      features: [100, 100, 200, 50, 150, 200],
+      temptations: [50, 250, 300, 150]
+    }
+  },
+  usd: {
+    symbol: '$',
+    baseBudget: 20, // Увеличили бюджет до $20 для лучшего UX
+    credit: {
+      totalFunctionality: 32, // Увеличили до $32
+      deduction: 2, // Увеличили вычет до $2
+      eligibility: {
+        maxTemptations: 1,
+        minFeatures: 1
+      }
+    },
+    // Цены в долларах (округленные для лучшего UX)
+    prices: {
+      features: [2, 2, 4, 1, 3, 4],    // Округлили до целых чисел
+      temptations: [1, 5, 6, 3]        // Округлили до целых чисел
+    }
+  }
 };
 
-export const BudgetCalculator = () => {
+interface BudgetCalculatorProps {
+  onButtonClick?: () => void;
+}
+
+export const BudgetCalculator = ({ onButtonClick }: BudgetCalculatorProps) => {
   const { trackEngagement } = useEngagementTracker();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [budget, setBudget] = useState(500);
+  const [budget, setBudget] = useState(500); // Начальный бюджет в рублях
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
   const [currentStep, setCurrentStep] = useState<'selection' | 'credit' | 'feedback' | 'completed'>('selection');
   const [feedbackText, setFeedbackText] = useState('');
@@ -47,6 +66,68 @@ export const BudgetCalculator = () => {
 
   const { completeMilestone } = useProductActions();
   const { toast } = useToast();
+  const { t, language } = useLanguage();
+
+  // 🔥 ПОЛУЧЕНИЕ КОНФИГУРАЦИИ ВАЛЮТЫ
+  const getCurrencyConfig = () => {
+    return language === 'en' ? CURRENCY_CONFIG.usd : CURRENCY_CONFIG.rub;
+  };
+
+  // 🔥 КОНВЕРТАЦИЯ ЦЕН
+  const convertPrice = (priceInRubles: number): string => {
+    const config = getCurrencyConfig();
+    if (language === 'en') {
+      // Для долларов используем предустановленные цены
+      return `${config.symbol}${priceInRubles}`;
+    }
+    return `${priceInRubles}${config.symbol}`;
+  };
+
+  const getBudgetDisplay = (): string => {
+    const config = getCurrencyConfig();
+    return `${config.baseBudget}${config.symbol}`;
+  };
+
+  const getCurrentBudget = (): number => {
+    const config = getCurrencyConfig();
+    return config.baseBudget;
+  };
+
+  const getCreditDisplay = (credit: number): string => {
+    const config = getCurrencyConfig();
+    return `${credit}${config.symbol}`;
+  };
+
+  // 🔥 ДИНАМИЧЕСКИЕ ОПЦИИ С ПЕРЕВОДАМИ И АДАПТИВНЫМИ ЦЕНАМИ
+  const features = useMemo(() => {
+    const config = getCurrencyConfig();
+    return [
+      { id: 1, name: t('calculator.options.features.1'), price: config.prices.features[0], type: "feature" },
+      { id: 2, name: t('calculator.options.features.2'), price: config.prices.features[1], type: "feature" },
+      { id: 3, name: t('calculator.options.features.3'), price: config.prices.features[2], type: "feature" },
+      { id: 4, name: t('calculator.options.features.4'), price: config.prices.features[3], type: "feature" },
+      { id: 5, name: t('calculator.options.features.5'), price: config.prices.features[4], type: "feature" },
+      { id: 6, name: t('calculator.options.features.6'), price: config.prices.features[5], type: "feature" }
+    ];
+  }, [t, language]);
+
+  const temptations = useMemo(() => {
+    const config = getCurrencyConfig();
+    return [
+      { id: 7, name: t('calculator.options.temptations.1'), price: config.prices.temptations[0], type: "temptation" },
+      { id: 8, name: t('calculator.options.temptations.2'), price: config.prices.temptations[1], type: "temptation" },
+      { id: 9, name: t('calculator.options.temptations.3'), price: config.prices.temptations[2], type: "temptation" },
+      { id: 10, name: t('calculator.options.temptations.4'), price: config.prices.temptations[3], type: "temptation" }
+    ];
+  }, [t, language]);
+
+  const allOptions = useMemo(() => [...features, ...temptations], [features, temptations]);
+
+  // 🔥 ИНИЦИАЛИЗАЦИЯ БЮДЖЕТА ПРИ СМЕНЕ ЯЗЫКА
+  useEffect(() => {
+    const config = getCurrencyConfig();
+    setBudget(config.baseBudget);
+  }, [language]);
 
   // 🔥 TELEGRAM CONFIG
   const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
@@ -54,102 +135,34 @@ export const BudgetCalculator = () => {
 
   // 🔥 ПЕРЕМЕШИВАНИЕ ОПЦИЙ ПРИ ИНИЦИАЛИЗАЦИИ
   useEffect(() => {
-    const mixed = [...features, ...temptations]
+    const mixed = allOptions
       .map(option => ({ ...option, sortOrder: Math.random() }))
       .sort((a, b) => a.sortOrder - b.sortOrder);
     setShuffledOptions(mixed);
-  }, []);
+  }, [allOptions]);
 
-  // 🔥 ФУНКЦИЯ ОТПРАВКИ КЛЮЧЕВЫХ СОБЫТИЙ В TELEGRAM
-  const sendKeyEventToTelegram = async (action: string) => {
-    const selectedFeatures = selectedOptions.filter(id => id <= 6).length;
-    const selectedTemptations = selectedOptions.filter(id => id > 6).length;
-    const totalSpent = 500 - budget + (creditUsed ? availableCredit : 0);
-
-    const message = `🎮 КАЛЬКУЛЯТОР: ${action}
-
-📊 Выбрано функций: ${selectedFeatures}
-🎁 Доп. опций: ${selectedTemptations}
-💰 Потрачено: ${totalSpent}₽
-🎯 Кредит: ${creditUsed ? 'Да' : 'Нет'}
-
-⏰ ${new Date().toLocaleString('ru-RU')}`;
-
-    try {
-      const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: message,
-          parse_mode: 'HTML'
-        })
-      });
-
-      if (response.ok) {
-        console.log('📊 Ключевое событие отправлено в Telegram');
-      }
-    } catch (error) {
-      console.error('Ошибка отправки в Telegram:', error);
-    }
-  };
-
-  // 🔥 ФУНКЦИЯ ОТПРАВКИ ОТЗЫВА В TELEGRAM
-  const sendFeedbackToTelegram = async () => {
-    const selectedFeatures = selectedOptions.filter(id => id <= 6).length;
-    const selectedTemptations = selectedOptions.filter(id => id > 6).length;
-    const totalSpent = 500 - budget + (creditUsed ? availableCredit : 0);
-
-    const message = `🎮 КАЛЬКУЛЯТОР: ОТЗЫВ
-
-📊 Выбрано функций: ${selectedFeatures}
-🎁 Доп. опций: ${selectedTemptations}
-💰 Потрачено: ${totalSpent}₽
-🎯 Кредит: ${creditUsed ? 'Да' : 'Нет'}
-
-💬 Отзыв: ${feedbackText}
-
-⏰ ${new Date().toLocaleString('ru-RU')}`;
-
-    try {
-      const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: message,
-          parse_mode: 'HTML'
-        })
-      });
-
-      if (response.ok) {
-        console.log('📊 Отзыв отправлен в Telegram');
-      }
-    } catch (error) {
-      console.error('Ошибка отправки отзыва:', error);
-    }
-  };
-
-  // 🔥 ФУНКЦИЯ РАСЧЕТА КРЕДИТА
+  // 🔥 ФУНКЦИЯ РАСЧЕТА КРЕДИТА С УЧЕТОМ ВАЛЮТЫ
   const calculateCredit = () => {
     const selectedFeatures = selectedOptions.filter(id => id <= 6);
     const selectedAlternatives = selectedOptions.filter(id => id > 6);
     
-    // 🔥 НОВЫЕ УСЛОВИЯ КРЕДИТОВАНИЯ:
+    const currencyConfig = getCurrencyConfig();
+    
+    // 🔥 УСЛОВИЯ КРЕДИТОВАНИЯ:
     const isEligibleForCredit = 
-      selectedAlternatives.length <= 1 && // Не больше 1 соблазна
-      selectedFeatures.length > 0;        // Выбрал хотя бы 1 функцию
+      selectedAlternatives.length <= currencyConfig.credit.eligibility.maxTemptations &&
+      selectedFeatures.length >= currencyConfig.credit.eligibility.minFeatures;
 
     if (!isEligibleForCredit) return 0;
 
-    // 🔥 Формула: кредит = (весь функционал - купленный) - 50₽
+    // 🔥 Формула: кредит = (весь функционал - купленный) - фиксированный вычет
     const purchasedMainFeatures = selectedFeatures
       .reduce((sum, id) => {
         const feature = features.find(f => f.id === id);
         return sum + (feature?.price || 0);
       }, 0);
 
-    const credit = (PRICES.TOTAL_FUNCTIONALITY - purchasedMainFeatures) - PRICES.CREDIT_DEDUCTION;
+    const credit = (currencyConfig.credit.totalFunctionality - purchasedMainFeatures) - currencyConfig.credit.deduction;
     
     return Math.max(credit, 0); // Не может быть отрицательным
   };
@@ -158,7 +171,7 @@ export const BudgetCalculator = () => {
   useEffect(() => {
     const credit = calculateCredit();
     setAvailableCredit(credit);
-  }, [selectedOptions]);
+  }, [selectedOptions, language]);
 
   // 🔥 АВТОМАТИЧЕСКИЙ ПЕРЕХОД ПРИ ИСЧЕРПАНИИ КРЕДИТА
   useEffect(() => {
@@ -204,7 +217,7 @@ export const BudgetCalculator = () => {
     setMessages(prev => [...prev, {
       id: `user-credit-${Date.now()}`,
       role: "user",
-      content: `Использую кредит: ${option?.name}`
+      content: t('calculator.messages.useCredit', { option: option?.name })
     }]);
 
     // 🔥 Яндекс.Метрика - ИСПОЛЬЗОВАНИЕ КРЕДИТА
@@ -225,12 +238,14 @@ export const BudgetCalculator = () => {
     // AI ответ
     setTimeout(() => {
       const remainingCredit = availableCredit - price;
-      let message = `Отлично! Куплено за кредит. `;
+      let message = t('calculator.messages.creditUsed');
       
       if (remainingCredit > 0) {
-        message += `Осталось кредита: ${remainingCredit}₽. Можете выбрать еще что-то или завершить.`;
+        message += t('calculator.messages.creditRemaining', { 
+          credit: getCreditDisplay(remainingCredit) 
+        });
       } else {
-        message += "🎉 Кредит исчерпан! Переходим к отзыву...";
+        message += t('calculator.messages.creditExhausted');
       }
       
       setMessages(prev => [...prev, {
@@ -247,15 +262,15 @@ export const BudgetCalculator = () => {
       {
         id: "1",
         role: "ai",
-        content: `Привет! У вас есть 500₽. Давайте создадим приложение вашей мечты для управления здоровьем!`
+        content: t('calculator.messages.welcome', { budget: getBudgetDisplay() })
       },
       {
         id: "2", 
         role: "ai",
-        content: `💡 **Важно:** Вы не обязаны тратить весь бюджет! Выбирайте только то, что действительно нужно.\n\nВыберите что хотите:`
+        content: t('calculator.messages.instruction')
       }
     ]);
-  }, []);
+  }, [t, language]);
 
   // Скролл вниз
   useEffect(() => {
@@ -280,7 +295,7 @@ export const BudgetCalculator = () => {
       setMessages(prev => [...prev, {
         id: `user-${Date.now()}`,
         role: "user", 
-        content: `Убираю: ${option?.name}`
+        content: t('calculator.messages.removeOption', { option: option?.name })
       }]);
 
       // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - УДАЛЕНИЕ ОПЦИИ
@@ -298,7 +313,7 @@ export const BudgetCalculator = () => {
       setMessages(prev => [...prev, {
         id: `user-${Date.now()}`,
         role: "user",
-        content: `Выбираю: ${option?.name}`
+        content: t('calculator.messages.selectOption', { option: option?.name })
       }]);
 
       // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ВЫБОР ОПЦИИ
@@ -317,12 +332,14 @@ export const BudgetCalculator = () => {
       // AI ответ
       setTimeout(() => {
         const remaining = budget - price;
-        let message = `Отлично! Осталось ${remaining}₽. `;
+        let message = t('calculator.messages.optionSelected', { 
+          remaining: getCreditDisplay(remaining) 
+        });
         
         if (remaining > 0) {
-          message += "Продолжайте выбирать или нажмите 'Завершить сборку' если готовы.";
+          message += t('calculator.messages.continueSelection');
         } else {
-          message += "Бюджет исчерпан! Нажмите 'Завершить сборку'.";
+          message += t('calculator.messages.budgetExhausted');
         }
         
         setMessages(prev => [...prev, {
@@ -333,10 +350,13 @@ export const BudgetCalculator = () => {
       }, 500);
     } else {
       // Не хватает денег
+      const missing = price - budget;
       setMessages(prev => [...prev, {
         id: `ai-${Date.now()}`,
         role: "ai", 
-        content: `Не хватает ${price - budget}₽. Выберите другую опцию или завершите сборку.`
+        content: t('calculator.messages.insufficientFunds', { 
+          missing: getCreditDisplay(missing) 
+        })
       }]);
 
       // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - НЕУДАЧНАЯ ПОПЫТКА
@@ -353,6 +373,8 @@ export const BudgetCalculator = () => {
 
   // 🔥 ЗАВЕРШЕНИЕ С ПРОВЕРКОЙ КРЕДИТА
   const handleComplete = () => {
+    onButtonClick?.();
+    
     const credit = calculateCredit();
     
     // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ КАЛЬКУЛЯТОРА
@@ -362,7 +384,7 @@ export const BudgetCalculator = () => {
       budget_remaining: budget,
       credit_eligible: credit > 0,
       credit_used: creditUsed,
-      total_spent: 500 - budget,
+      total_spent: getCurrentBudget() - budget,
       final_selection_strategy: getSelectionStrategy() // 🎯 финальная стратегия
     });
     
@@ -387,7 +409,7 @@ export const BudgetCalculator = () => {
       setMessages(prev => [...prev, {
         id: `user-complete-${Date.now()}`,
         role: "user",
-        content: "Готово!"
+        content: t('calculator.messages.ready')
       }]);
 
       // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ПРЕДЛОЖЕНИЕ КРЕДИТА
@@ -402,7 +424,9 @@ export const BudgetCalculator = () => {
         setMessages(prev => [...prev, {
           id: `ai-credit-offer`,
           role: "ai",
-          content: `🎉 ВЫ ПОЛУЧАЕТЕ КРЕДИТ ${credit}₽!\n\nВы проявили осознанность:\n• Выбрали здоровье над сиюминутными удовольствиями\n• Ограничились только 1 дополнительной опцией\n\n💎 Теперь можете докупить ВСЕ функции приложения кроме одной, которую сочтёте наименее полезной!\n\nЭто ваша награда за прагматичный выбор!`
+          content: t('calculator.messages.creditOffer', { 
+            credit: getCreditDisplay(credit) 
+          })
         }]);
       }, 800);
     } else {
@@ -417,7 +441,7 @@ export const BudgetCalculator = () => {
     setMessages(prev => [...prev, {
       id: `user-skip-credit`,
       role: "user", 
-      content: "Пропускаю кредит"
+      content: t('calculator.messages.skipCredit')
     }]);
 
     // 🔥 ОТСЛЕЖИВАЕМ ВОВЛЕЧЕННОСТЬ - ПРОПУСК КРЕДИТА
@@ -446,25 +470,33 @@ export const BudgetCalculator = () => {
     }
 
     toast({
-      title: creditUsed ? "Сборка завершена с кредитом! 🎉" : "Сборка завершена! 🎉",
+      title: creditUsed 
+        ? t('calculator.toast.completedWithCredit.title') 
+        : t('calculator.toast.completed.title'),
       description: creditUsed 
-        ? "Использована система кредитования! Поделитесь мнением для получения бонусов" 
-        : "Сборка завершена! Поделитесь мнением для получения бонусов",
+        ? t('calculator.toast.completedWithCredit.description')
+        : t('calculator.toast.completed.description'),
       variant: "default",
     });
 
     setTimeout(() => {
-      const totalSpent = 500 - budget + (creditUsed ? availableCredit : 0);
+      const totalSpent = getCurrentBudget() - budget + (creditUsed ? availableCredit : 0);
       const selectedFeatures = selectedOptions.filter(id => id <= 6).length;
       const selectedTemptations = selectedOptions.filter(id => id > 6).length;
       
-      let completionMessage = `🎉 Ваше идеальное приложение готово!\n\n• Выбрано функций: ${selectedFeatures}\n• Доп. опций: ${selectedTemptations}\n• Потрачено: ${totalSpent}₽`;
+      let completionMessage = t('calculator.messages.completion', {
+        features: selectedFeatures,
+        temptations: selectedTemptations,
+        spent: getCreditDisplay(totalSpent)
+      });
       
       if (creditUsed) {
-        completionMessage += `\n• Использовано кредита: ${availableCredit}₽`;
+        completionMessage += t('calculator.messages.creditUsedAmount', {
+          credit: getCreditDisplay(availableCredit)
+        });
       }
       
-      completionMessage += `\n\nКакие функции добавить? Ваш отзыв поможет нам стать лучше!`;
+      completionMessage += t('calculator.messages.feedbackRequest');
       
       setMessages(prev => [...prev, {
         id: `ai-final`,
@@ -472,6 +504,78 @@ export const BudgetCalculator = () => {
         content: completionMessage
       }]);
     }, 800);
+  };
+
+  // 🔥 ФУНКЦИЯ ОТПРАВКИ КЛЮЧЕВЫХ СОБЫТИЙ В TELEGRAM
+  const sendKeyEventToTelegram = async (action: string) => {
+    const selectedFeatures = selectedOptions.filter(id => id <= 6).length;
+    const selectedTemptations = selectedOptions.filter(id => id > 6).length;
+    const totalSpent = getCurrentBudget() - budget + (creditUsed ? availableCredit : 0);
+
+    const message = `🎮 КАЛЬКУЛЯТОР: ${action}
+
+📊 Выбрано функций: ${selectedFeatures}
+🎁 Доп. опций: ${selectedTemptations}
+💰 Потрачено: ${totalSpent}${language === 'en' ? '$' : '₽'}
+🎯 Кредит: ${creditUsed ? 'Да' : 'Нет'}
+🌐 Язык: ${language}
+
+⏰ ${new Date().toLocaleString('ru-RU')}`;
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+
+      if (response.ok) {
+        console.log('📊 Ключевое событие отправлено в Telegram');
+      }
+    } catch (error) {
+      console.error('Ошибка отправки в Telegram:', error);
+    }
+  };
+
+  // 🔥 ФУНКЦИЯ ОТПРАВКИ ОТЗЫВА В TELEGRAM
+  const sendFeedbackToTelegram = async () => {
+    const selectedFeatures = selectedOptions.filter(id => id <= 6).length;
+    const selectedTemptations = selectedOptions.filter(id => id > 6).length;
+    const totalSpent = getCurrentBudget() - budget + (creditUsed ? availableCredit : 0);
+
+    const message = `🎮 КАЛЬКУЛЯТОР: ОТЗЫВ
+
+📊 Выбрано функций: ${selectedFeatures}
+🎁 Доп. опций: ${selectedTemptations}
+💰 Потрачено: ${totalSpent}${language === 'en' ? '$' : '₽'}
+🎯 Кредит: ${creditUsed ? 'Да' : 'Нет'}
+🌐 Язык: ${language}
+
+💬 Отзыв: ${feedbackText}
+
+⏰ ${new Date().toLocaleString('ru-RU')}`;
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+
+      if (response.ok) {
+        console.log('📊 Отзыв отправлен в Telegram');
+      }
+    } catch (error) {
+      console.error('Ошибка отправки отзыва:', error);
+    }
   };
 
   // Отправка отзыва в Telegram
@@ -509,8 +613,8 @@ export const BudgetCalculator = () => {
     }]);
 
     toast({
-      title: "Спасибо за отзыв! 🎉",
-      description: "Ваш отзыв очень ценен для нас!",
+      title: t('calculator.toast.feedbackSubmitted.title'),
+      description: t('calculator.toast.feedbackSubmitted.description'),
       variant: "default",
     });
 
@@ -518,7 +622,7 @@ export const BudgetCalculator = () => {
       setMessages(prev => [...prev, {
         id: `ai-thanks`,
         role: "ai", 
-        content: "Спасибо за ваш отзыв! Это очень ценно для нас 💙\n\nВы получили бонусы за отзыв!"
+        content: t('calculator.messages.thanks')
       }]);
     }, 500);
 
@@ -527,7 +631,8 @@ export const BudgetCalculator = () => {
 
   // Сброс калькулятора
   const handleReset = () => {
-    setBudget(500);
+    const config = getCurrencyConfig();
+    setBudget(config.baseBudget);
     setSelectedOptions([]);
     setCurrentStep('selection');
     setFeedbackText('');
@@ -535,7 +640,7 @@ export const BudgetCalculator = () => {
     setCreditUsed(false);
     
     // Перемешиваем заново
-    const mixed = [...features, ...temptations]
+    const mixed = allOptions
       .map(option => ({ ...option, sortOrder: Math.random() }))
       .sort((a, b) => a.sortOrder - b.sortOrder);
     setShuffledOptions(mixed);
@@ -551,12 +656,12 @@ export const BudgetCalculator = () => {
       {
         id: "reset-1",
         role: "ai",
-        content: "Отлично! Начинаем заново. У вас снова 500₽!"
+        content: t('calculator.messages.reset')
       },
       {
         id: "reset-2",
         role: "ai",
-        content: "Выберите что хотите:"
+        content: t('calculator.messages.resetInstruction')
       }
     ]);
   };
@@ -572,10 +677,10 @@ export const BudgetCalculator = () => {
             🎮
           </div>
           <div>
-            <h3 className="font-semibold">Сборка приложения</h3>
+            <h3 className="font-semibold">{t('calculator.title')}</h3>
             <p className="text-xs opacity-90">
-              Бюджет: {budget}₽ 
-              {availableCredit > 0 && ` + Кредит: ${availableCredit}₽`}
+              {t('calculator.budget')}: {getBudgetDisplay()}
+              {availableCredit > 0 && ` + ${t('calculator.credit')}: ${getCreditDisplay(availableCredit)}`}
             </p>
           </div>
         </div>
@@ -585,7 +690,7 @@ export const BudgetCalculator = () => {
           onClick={handleReset}
           className="text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/10"
         >
-          🔄 Сбросить
+          🔄 {t('calculator.reset')}
         </Button>
       </div>
 
@@ -607,7 +712,7 @@ export const BudgetCalculator = () => {
         {currentStep === 'selection' && (
           <div className="mt-4 space-y-3">
             <p className="text-sm font-medium text-muted-foreground text-center">
-              🎯 Выберите опции (перемешаны для удобства):
+              {t('calculator.selection.title')}
             </p>
             
             <div className="grid grid-cols-1 gap-1.5">
@@ -634,7 +739,7 @@ export const BudgetCalculator = () => {
                     <span className={`text-xs shrink-0 ${
                       selectedOptions.includes(option.id) ? 'text-white/90' : 'opacity-70'
                     }`}>
-                      {option.price}₽
+                      {convertPrice(option.price)}
                     </span>
                   </div>
                 </Button>
@@ -646,17 +751,17 @@ export const BudgetCalculator = () => {
               className="w-full mt-2 text-sm py-2"
               disabled={selectedOptions.filter(id => id <= 6).length === 0}
             >
-              🎯 Завершить сборку ({budget}₽ осталось)
+              🎯 {t('calculator.completeButton', { budget: getBudgetDisplay() })}
             </Button>
             
             <div className="flex justify-center gap-4 text-xs text-muted-foreground mt-2">
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-blue-200 rounded-sm"></div>
-                <span>Функции приложения</span>
+                <span>{t('calculator.labels.features')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-rose-200 rounded-sm"></div>
-                <span>Альтернативные опции</span>
+                <span>{t('calculator.labels.temptations')}</span>
               </div>
             </div>
           </div>
@@ -670,9 +775,9 @@ export const BudgetCalculator = () => {
             className="mt-4 space-y-4"
           >
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="font-medium text-blue-800 mb-1 text-sm">💎 Вам доступен кредит!</p>
+              <p className="font-medium text-blue-800 mb-1 text-sm">{t('calculator.credit.available')}</p>
               <p className="text-xs text-blue-700">
-                Вы можете докупить функции на {availableCredit}₽. Выберите что хотите добавить:
+                {t('calculator.credit.description', { credit: getCreditDisplay(availableCredit) })}
               </p>
             </div>
 
@@ -690,7 +795,7 @@ export const BudgetCalculator = () => {
                         {option.name}
                       </span>
                       <span className="text-xs opacity-70 shrink-0">
-                        {option.price}₽ (кредит)
+                        {convertPrice(option.price)} ({t('calculator.credit.label')})
                       </span>
                     </div>
                   </Button>
@@ -699,7 +804,7 @@ export const BudgetCalculator = () => {
             ) : (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-xs text-yellow-700 text-center">
-                  🎉 Вы уже выбрали всё доступное за кредит! Нажмите "Завершить"
+                  {t('calculator.credit.noOptions')}
                 </p>
               </div>
             )}
@@ -710,13 +815,13 @@ export const BudgetCalculator = () => {
                 variant="outline"
                 className="flex-1 text-sm py-2"
               >
-                Пропустить кредит
+                {t('calculator.credit.skip')}
               </Button>
               <Button 
                 onClick={proceedToFeedback}
                 className="flex-1 text-sm py-2"
               >
-                Завершить
+                {t('calculator.credit.finish')}
               </Button>
             </div>
           </motion.div>
@@ -729,12 +834,12 @@ export const BudgetCalculator = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mt-4 space-y-3"
           >
-            <p className="text-sm font-medium">Ваш отзыв о будущем приложении:</p>
+            <p className="text-sm font-medium">{t('calculator.feedback.title')}</p>
             <div className="flex gap-2">
               <Input
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
-                placeholder="Что понравилось? Что можно улучшить? Какие функции добавили бы Вы?"
+                placeholder={t('calculator.feedback.placeholder')}
                 className="flex-1 text-sm"
               />
               <Button 
@@ -742,11 +847,11 @@ export const BudgetCalculator = () => {
                 disabled={!feedbackText.trim() || isSubmitting}
                 className="text-sm py-2"
               >
-                {isSubmitting ? "📤" : "Отправить"}
+                {isSubmitting ? "📤" : t('calculator.feedback.submit')}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Отзыв придет основателю и поможет сделать приложение лучше
+              {t('calculator.feedback.note')}
             </p>
           </motion.div>
         )}
@@ -758,9 +863,9 @@ export const BudgetCalculator = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-center"
           >
-            <p className="font-medium text-green-800 mb-2">Спасибо за ваше участие! 🎉</p>
+            <p className="font-medium text-green-800 mb-2">{t('calculator.completed.title')}</p>
             <p className="text-sm text-green-700">
-              Ваш отзыв очень важен для нас. Хотите продолжить знакомство с Remedia?
+              {t('calculator.completed.description')}
             </p>
             <Button 
               onClick={() => {
@@ -771,7 +876,7 @@ export const BudgetCalculator = () => {
               }}
               className="mt-3 text-sm py-2"
             >
-              Перейти к списку ожидания
+              {t('calculator.completed.button')}
             </Button>
           </motion.div>
         )}

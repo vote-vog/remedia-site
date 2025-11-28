@@ -14,8 +14,8 @@ import { Header } from "@/components/Header";
 import { ProgressBar } from "@/components/ProgressBar";
 import { Footer } from "@/components/layout/Footer";
 import { EasterEggs } from "@/components/EasterEggs";
-import { YandexMetrika } from "@/components/YandexMetrika";
 import { useProgress } from "@/hooks/useProgress";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const Index = () => {
   const {
@@ -34,6 +34,8 @@ const Index = () => {
     progress,
     isInitialized
   } = useProgress();
+
+  const { t } = useLanguage();
 
   // 🎯 Состояния для отслеживания взаимодействий с пасхалками
   const [anyButtonClicked, setAnyButtonClicked] = useState(false);
@@ -78,9 +80,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* 🎯 Яндекс.Метрика */}
-      <YandexMetrika />
-
       {/* 🎯 ПАСХАЛКИ-КАПСУЛКИ */}
       <EasterEggs 
         progressBarClicked={progressBarClicked}
@@ -120,7 +119,7 @@ const Index = () => {
           <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-bounce">
             <div className="flex items-center gap-2">
               <span className="text-lg">🎉</span>
-              <span>Вы получили +20% за приглашенного друга!</span>
+              <span>{t('index.referralSuccess')}</span>
             </div>
           </div>
         </div>
@@ -139,10 +138,10 @@ const Index = () => {
         <section id="demo" className="py-16 px-4">
           <div className="max-w-6xl mx-auto text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Попробуйте в действии
+              {t('index.demo.title')}
             </h2>
             <p className="text-lg text-muted-foreground">
-              Интерактивная демонстрация: посмотрите, как AI-помощник работает с реальными сценариями
+              {t('index.demo.subtitle')}
             </p>
           </div>
           <ErrorBoundary>
@@ -154,10 +153,10 @@ const Index = () => {
         <section id="calculator" className="py-16 px-4 bg-muted/20">
           <div className="max-w-6xl mx-auto text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Соберите приложение своей мечты
+              {t('index.calculator.title')}
             </h2>
             <p className="text-lg text-muted-foreground">
-              У вас есть 500₽ - выберите функции, которые действительно важны для вас
+              {t('index.calculator.subtitle')}
             </p>
           </div>
           <ErrorBoundary>

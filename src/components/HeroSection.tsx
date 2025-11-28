@@ -2,9 +2,17 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import sechenovIcon from "@/assets/sechenov-icon.png";
+import { useLanguage } from "@/hooks/useLanguage";
 
-export const HeroSection = () => {
+interface HeroSectionProps {
+  onButtonClick?: () => void;
+}
+
+export const HeroSection = ({ onButtonClick }: HeroSectionProps) => {
+  const { t } = useLanguage();
+
   const scrollToWaitlist = () => {
+    onButtonClick?.();
     const waitlistSection = document.getElementById('waitlist');
     if (waitlistSection) {
       waitlistSection.scrollIntoView({ 
@@ -13,6 +21,16 @@ export const HeroSection = () => {
       });
     }
   };
+
+  // Элементы фичей для лучшей структуры
+  const featureItems = [
+    { icon: "📊", key: "charts" },
+    { icon: "⏰", key: "notifications" },
+    { icon: "📄", key: "reports" },
+    { icon: "🤒", key: "symptoms" },
+    { icon: "💊", key: "therapy" },
+    { icon: "📈", key: "analysis" }
+  ];
 
   return (
     <section className="relative py-20 px-4 overflow-hidden">
@@ -25,12 +43,12 @@ export const HeroSection = () => {
           transition={{ duration: 0.6 }}
         >
           <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            Перестаньте в одиночку гадать,<br />что поможет.
-            <span className="text-primary"> Начните понимать.</span>
+            {t('hero.title.line1')}<br />{t('hero.title.line2')}
+            <span className="text-primary"> {t('hero.title.highlight')}</span>
           </h1>
 
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12">
-            Простой AI-помощник, который превращает ваши ежедневные наблюдения в чате в ясные закономерности, которые могут упустить врачи 
+            {t('hero.subtitle')}
           </p>
 
           <div className="flex justify-center mb-16">
@@ -39,37 +57,24 @@ export const HeroSection = () => {
               className="bg-primary hover:bg-primary/90 text-white px-8 py-3 text-lg"
               onClick={scrollToWaitlist}
             >
-              Начать бесплатно
+              {t('hero.ctaButton')}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
 
-
+          {/* Фичи */}
           <div className="flex flex-wrap gap-4 justify-center mb-20">
-            <div className="flex items-center gap-2 bg-card px-6 py-3 rounded-xl border border-border">
-              <span className="text-2xl">📊</span>
-              <span className="text-sm font-medium">Структурированные графики</span>
-            </div>
-            <div className="flex items-center gap-2 bg-card px-6 py-3 rounded-xl border border-border">
-              <span className="text-2xl">⏰</span>
-              <span className="text-sm font-medium">Умные уведомления</span>
-            </div>
-            <div className="flex items-center gap-2 bg-card px-6 py-3 rounded-xl border border-border">
-              <span className="text-2xl">📄</span>
-              <span className="text-sm font-medium">Информативные отчеты для врача</span>
-            </div>
-            <div className="flex items-center gap-2 bg-card px-6 py-3 rounded-xl border border-border">
-              <span className="text-2xl">🤒</span>
-              <span className="text-sm font-medium">Отслеживание симптомов в чате</span>
-            </div>
-            <div className="flex items-center gap-2 bg-card px-6 py-3 rounded-xl border border-border">
-              <span className="text-2xl">💊</span>
-              <span className="text-sm font-medium">Отслеживание терапии</span>
-            </div>
-            <div className="flex items-center gap-2 bg-card px-6 py-3 rounded-xl border border-border">
-              <span className="text-2xl">📈</span>
-              <span className="text-sm font-medium">Анализ образа жизни и других факторов</span>
-            </div>
+            {featureItems.map((feature, index) => (
+              <div 
+                key={feature.key}
+                className="flex items-center gap-2 bg-card px-6 py-3 rounded-xl border border-border"
+              >
+                <span className="text-2xl">{feature.icon}</span>
+                <span className="text-sm font-medium">
+                  {t(`hero.features.${feature.key}`)}
+                </span>
+              </div>
+            ))}
           </div>
 
           {/* 🔥 СЕЧЕНОВСКИЙ БЛОК С "ВЫПУСКНИК" */}
@@ -89,7 +94,7 @@ export const HeroSection = () => {
             {/* Текст с "Выпускник" и ссылкой */}
             <div className="flex flex-col items-center gap-1">
               <span className="text-lg text-muted-foreground">
-                Выпускник
+                {t('hero.sechenov.graduate')}
               </span>
               <a 
                 href="https://sechenov.tech/" 
@@ -103,7 +108,7 @@ export const HeroSection = () => {
             
             {/* Подпись под ссылкой */}
             <p className="text-sm text-muted-foreground">
-              Акселерационная программа Первого МГМУ
+              {t('hero.sechenov.program')}
             </p>
           </motion.div>
         </motion.div>

@@ -6,6 +6,7 @@ import {
   Cpu, Activity, Dna, Network, Globe, Trophy, Star, Award
 } from 'lucide-react';
 import { useEngagementTracker } from '../hooks/useEngagementTracker';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface EasterEgg {
   id: string;
@@ -25,6 +26,7 @@ interface EasterEggsProps {
 
 export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = false }: EasterEggsProps) => {
   const { trackEngagement } = useEngagementTracker();
+  const { t } = useLanguage();
   const [activeEggs, setActiveEggs] = useState<Set<string>>(new Set());
   const [visibleEgg, setVisibleEgg] = useState<string | null>(null);
   const [hasScrolled, setHasScrolled] = useState(false);
@@ -35,17 +37,17 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
   const eggs: EasterEgg[] = [
     {
       id: 'for-everyone',
-      title: 'Для всех 🎯',
-      content: 'Вы здоровы или не болеете ревматоидным артритом? Ничего страшного! Мы начинаем с фокуса на хронические заболевания, но планируем помочь абсолютно всем в управлении здоровьем.',
+      title: t('easterEggs.eggs.forEveryone.title'),
+      content: t('easterEggs.eggs.forEveryone.content'),
       icon: <Globe className="w-5 h-5" />,
-      position: { x: 50, y: 70 }, // 🔥 СМЕЩЕНО: было { x: 85, y: 25 }, стало { x: 50, y: 70 }
+      position: { x: 50, y: 70 },
       trigger: 'first-scroll',
       condition: () => hasScrolled
     },
     {
       id: 'mission-control',
-      title: 'Контроль, а не трекер 🎯',
-      content: 'Мы создаем не "еще один трекер симптомов", а инструмент, который возвращает чувство контроля над собственной жизнью при хроническом заболевании.',
+      title: t('easterEggs.eggs.missionControl.title'),
+      content: t('easterEggs.eggs.missionControl.content'),
       icon: <Target className="w-5 h-5" />,
       position: { x: 15, y: 35 },
       trigger: 'time-delay',
@@ -53,8 +55,8 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     },
     {
       id: 'token-economy',
-      title: 'Токен-экономика 🪙',
-      content: 'Знаете ли вы, что рынок медицинских данных оценивается в $5 млрд, но пациенты, ежедневно предоставляющие ценнейшую информацию, не получают за это ничего? Мы меняем эту парадигму: сначала внутри приложения, потом по всему миру!',
+      title: t('easterEggs.eggs.tokenEconomy.title'),
+      content: t('easterEggs.eggs.tokenEconomy.content'),
       icon: <Zap className="w-5 h-5" />,
       position: { x: 75, y: 65 },
       trigger: 'progress-click',
@@ -62,16 +64,16 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     },
     {
       id: 'founder-story',
-      title: 'История основателя 💫',
-      content: 'Основатель потратил 6 месяцев на 30+ интервью с пациентами и врачами и провёл около тысячи часов за компьютером, прежде чем объявить об MVP, которое создано без внешних инвестиций!',
+      title: t('easterEggs.eggs.founderStory.title'),
+      content: t('easterEggs.eggs.founderStory.content'),
       icon: <Rocket className="w-5 h-5" />,
       position: { x: 25, y: 75 },
       trigger: 'first-click'
     },
     {
       id: 'digital-twin',
-      title: 'Цифровой Двойник 🧠',
-      content: 'На цифровом двойнике за считанные дни можно будет тестировать новые лекарства, на что сейчас уходит десятки лет. От дневника симптомов к предиктивной медицине будущего!',
+      title: t('easterEggs.eggs.digitalTwin.title'),
+      content: t('easterEggs.eggs.digitalTwin.content'),
       icon: <Brain className="w-5 h-5" />,
       position: { x: 40, y: 20 },
       trigger: 'time-delay',
@@ -79,8 +81,8 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     },
     {
       id: 'privacy-first',
-      title: 'Конфиденциальность 🛡️',
-      content: 'Собранные в приложении данные анонимизируются и используются для движения науки и здравоохранения вперёд. Вы закладываете фундамент для здоровья следующих поколений!',
+      title: t('easterEggs.eggs.privacyFirst.title'),
+      content: t('easterEggs.eggs.privacyFirst.content'),
       icon: <Shield className="w-5 h-5" />,
       position: { x: 60, y: 50 },
       trigger: 'time-delay',
@@ -88,8 +90,8 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     },
     {
       id: 'patient-power',
-      title: 'Сила пациентов 💪',
-      content: 'Вместо того чтобы быть пассивными наблюдателями, пациенты становятся активными участниками исследований. Ваши данные - ваш голос в медицине будущего!',
+      title: t('easterEggs.eggs.patientPower.title'),
+      content: t('easterEggs.eggs.patientPower.content'),
       icon: <Activity className="w-5 h-5" />,
       position: { x: 20, y: 15 },
       trigger: 'time-delay',
@@ -97,8 +99,8 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     },
     {
       id: 'ai-revolution',
-      title: 'AI-революция в медицине 🤖',
-      content: 'Только 3% медицинских данных сегодня используется для AI-исследований. Мы открываем доступ к остальным 97%, ускоряя разработку лекарств в 10 раз!',
+      title: t('easterEggs.eggs.aiRevolution.title'),
+      content: t('easterEggs.eggs.aiRevolution.content'),
       icon: <Cpu className="w-5 h-5" />,
       position: { x: 80, y: 40 },
       trigger: 'time-delay',
@@ -106,8 +108,8 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     },
     {
       id: 'personalized-medicine',
-      title: 'Персонализированная медицина 🧬',
-      content: 'Скоро лечение будет подбираться не по усредненным протоколам, где пациент не имеют уникальных особенностей, а на основе ваших уникальных данных. Мы строим этот будущий уже сегодня!',
+      title: t('easterEggs.eggs.personalizedMedicine.title'),
+      content: t('easterEggs.eggs.personalizedMedicine.content'),
       icon: <Dna className="w-5 h-5" />,
       position: { x: 10, y: 80 },
       trigger: 'time-delay',
@@ -115,8 +117,8 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     },
     {
       id: 'health-ecosystem',
-      title: 'Экосистема здоровья 🏥',
-      content: 'Мы строим не приложение, а целую экосистему: пациенты + врачи + исследователи + фармакомпании. Все вместе мы сильнее!',
+      title: t('easterEggs.eggs.healthEcosystem.title'),
+      content: t('easterEggs.eggs.healthEcosystem.content'),
       icon: <Network className="w-5 h-5" />,
       position: { x: 90, y: 70 },
       trigger: 'time-delay',
@@ -132,11 +134,11 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
       egg_id: eggId,
       egg_title: eggTitle,
       eggs_viewed_count: viewedEggs.size + 1,
-      egg_position: egg?.position, // 🎯 позиция на экране
+      egg_position: egg?.position,
       session_eggs: viewedEggs.size + 1,
       is_priority_egg: ['for-everyone', 'token-economy', 'founder-story'].includes(eggId),
-      egg_trigger_type: egg?.trigger, // тип триггера активации
-      total_available_eggs: eggs.length // общее количество пасхалок
+      egg_trigger_type: egg?.trigger,
+      total_available_eggs: eggs.length
     });
   }, [trackEngagement, viewedEggs.size, eggs]);
 
@@ -232,12 +234,12 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     
     if (allCompleted && newViewedEggs.size === allEggIds.length) {
       console.log('🎉 Все пасхалки собраны!');
-      trackEggEvent('all', 'Все пасхалки', 'collect_all');
+      trackEggEvent('all', t('easterEggs.completion.allEggs'), 'collect_all');
       setTimeout(() => {
         setShowCompletionPopup(true);
       }, 1000);
     }
-  }, [eggs, trackEggEvent]);
+  }, [eggs, trackEggEvent, t]);
 
   const handleEggClick = useCallback((eggId: string) => {
     if (!activeEggs.has(eggId) && canActivateEgg(eggId)) {
@@ -284,16 +286,16 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
   // Функция для получения цвета по ID
   const getEggColor = (eggId: string) => {
     const colors: { [key: string]: string } = {
-      'for-everyone': 'rgba(16, 185, 129, 0.8)', // Изумрудный
-      'mission-control': 'rgba(6, 182, 212, 0.8)', // Бирюзовый
-      'token-economy': 'rgba(14, 165, 233, 0.8)', // Голубой
-      'founder-story': 'rgba(59, 130, 246, 0.8)', // Синий
-      'digital-twin': 'rgba(16, 185, 129, 0.8)', // Изумрудный
-      'privacy-first': 'rgba(6, 182, 212, 0.8)', // Бирюзовый
-      'patient-power': 'rgba(14, 165, 233, 0.8)', // Голубой
-      'ai-revolution': 'rgba(59, 130, 246, 0.8)', // Синий
-      'personalized-medicine': 'rgba(16, 185, 129, 0.8)', // Изумрудный
-      'health-ecosystem': 'rgba(6, 182, 212, 0.8)' // Бирюзовый
+      'for-everyone': 'rgba(16, 185, 129, 0.8)',
+      'mission-control': 'rgba(6, 182, 212, 0.8)',
+      'token-economy': 'rgba(14, 165, 233, 0.8)',
+      'founder-story': 'rgba(59, 130, 246, 0.8)',
+      'digital-twin': 'rgba(16, 185, 129, 0.8)',
+      'privacy-first': 'rgba(6, 182, 212, 0.8)',
+      'patient-power': 'rgba(14, 165, 233, 0.8)',
+      'ai-revolution': 'rgba(59, 130, 246, 0.8)',
+      'personalized-medicine': 'rgba(16, 185, 129, 0.8)',
+      'health-ecosystem': 'rgba(6, 182, 212, 0.8)'
     };
     return colors[eggId] || 'rgba(6, 182, 212, 0.8)';
   };
@@ -580,7 +582,7 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
                       transition={{ delay: 0.8 }}
                       className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent mb-4"
                     >
-                      Вау! Поздравляем! 🎉
+                      {t('easterEggs.completion.title')}
                     </motion.h3>
 
                     {/* Текст */}
@@ -590,8 +592,7 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
                       transition={{ delay: 1.0 }}
                       className="text-gray-700 text-lg leading-relaxed mb-6"
                     >
-                      <strong>Ваше упорство в изучении Remedia достойно всяких похвал!</strong><br />
-                      Вы многого добьетесь в исследовании своего организма с Remedia!
+                      {t('easterEggs.completion.description')}
                     </motion.p>
 
                     {/* P.S. */}
@@ -602,7 +603,7 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
                       className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl p-4 border-2 border-teal-200/50 mb-6"
                     >
                       <p className="text-sm text-teal-800 font-medium">
-                        P.S.: а Вы уже пробовали заполнить капсулу до 200%? 😉
+                        {t('easterEggs.completion.ps')}
                       </p>
                     </motion.div>
 
@@ -614,7 +615,7 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
                       onClick={handleCloseCompletionPopup}
                       className="bg-gradient-to-r from-teal-500 to-blue-500 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
                     >
-                      Продолжить исследование! 🚀
+                      {t('easterEggs.completion.continueButton')}
                     </motion.button>
                   </div>
 

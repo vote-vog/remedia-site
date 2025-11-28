@@ -1,27 +1,34 @@
 import { motion } from "framer-motion";
+import { useLanguage } from "@/hooks/useLanguage";
 
-const pilotResults = [
+const pilotResultsData = [
   {
     icon: "🎯",
-    title: "Точность прогнозирования",
+    titleKey: "pilotResults.items.0.title",
     value: "94%",
-    description: "точность AI в определении связи между симптомами и триггерами"
+    descriptionKey: "pilotResults.items.0.description"
   },
   {
     icon: "⏱️", 
-    title: "Экономия времени",
+    titleKey: "pilotResults.items.1.title",
     value: "3.5 часа",
-    description: "средняя экономия времени на подготовку к визиту врача"
+    descriptionKey: "pilotResults.items.1.description"
   },
   {
     icon: "📊",
-    title: "Полнота данных",
+    titleKey: "pilotResults.items.2.title",
     value: "87%",
-    description: "пользователей ведут более полные записи о симптомах"
+    descriptionKey: "pilotResults.items.2.description"
   }
 ];
 
-export const PilotResults = () => {
+interface PilotResultsProps {
+  onButtonClick?: () => void;
+}
+
+export const PilotResults = ({ onButtonClick }: PilotResultsProps) => {
+  const { t } = useLanguage();
+
   return (
     <section className="py-20 px-4 bg-gradient-to-b from-muted/20 to-background">
       <div className="max-w-6xl mx-auto">
@@ -33,15 +40,15 @@ export const PilotResults = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Результаты пилотного тестирования
+            {t('pilotResults.title')}
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Данные из закрытого тестирования с участием медицинских экспертов
+            {t('pilotResults.subtitle')}
           </p>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {pilotResults.map((result, index) => (
+          {pilotResultsData.map((result, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -52,8 +59,12 @@ export const PilotResults = () => {
             >
               <div className="text-4xl mb-4">{result.icon}</div>
               <div className="text-3xl font-bold text-primary mb-2">{result.value}</div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{result.title}</h3>
-              <p className="text-muted-foreground text-sm">{result.description}</p>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                {t(result.titleKey)}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {t(result.descriptionKey)}
+              </p>
             </motion.div>
           ))}
         </div>
@@ -68,8 +79,7 @@ export const PilotResults = () => {
         >
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 max-w-2xl mx-auto">
             <p className="text-blue-800 text-sm">
-              🔬 <span className="font-semibold">Данные из тестирования алгоритмов</span> на исторических медицинских данных. 
-              Реальные пользовательские результаты появятся после запуска.
+              {t('pilotResults.disclaimer')}
             </p>
           </div>
         </motion.div>

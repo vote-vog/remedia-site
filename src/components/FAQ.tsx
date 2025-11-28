@@ -1,35 +1,46 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
 
-const faqItems = [
+const faqItemsData = [
   {
-    question: "Это заменяет врача?",
-    answer: "Нет, это инструмент для лучшего взаимодействия с врачом. Мы помогаем собирать и анализировать данные, чтобы вы могли предоставить врачу полную картину вашего состояния."
+    questionKey: "faq.items.0.question",
+    answerKey: "faq.items.0.answer"
   },
   {
-    question: "Безопасны ли мои медицинские данные?",
-    answer: "Все данные шифруются и хранятся анонимно. Мы соблюдаем медицинскую этику и федеральный закон 'О персональных данных'. Ваша конфиденциальность - наш приоритет."
+    questionKey: "faq.items.1.question",
+    answerKey: "faq.items.1.answer"
   },
   {
-    question: "Сколько это стоит?",
-    answer: "Базовые функции бесплатны. Премиум-аналитика с расширенными отчетами будет доступна по подписке после запуска."
+    questionKey: "faq.items.2.question",
+    answerKey: "faq.items.2.answer"
   },
   {
-    question: "Нужны ли технические знания?",
-    answer: "Нет! Интерфейс интуитивно понятен. Вы можете записывать симптомы голосом, а AI сам проведет весь анализ."
+    questionKey: "faq.items.3.question",
+    answerKey: "faq.items.3.answer"
   },
   {
-    question: "Как быстро я увижу результаты?",
-    answer: "Первые закономерности AI находит уже через 1-2 недели использования. Полная картина формируется за 1-2 месяца регулярного ведения записей."
+    questionKey: "faq.items.4.question",
+    answerKey: "faq.items.4.answer"
   },
   {
-    question: "Можно ли использовать для других заболеваний?",
-    answer: "Сейчас фокус на ревматоидных заболеваниях. В будущем планируем расширить на другие хронические заболевания."
+    questionKey: "faq.items.5.question",
+    answerKey: "faq.items.5.answer"
   }
 ];
 
-export const FAQ = () => {
+interface FAQProps {
+  onButtonClick?: () => void;
+}
+
+export const FAQ = ({ onButtonClick }: FAQProps) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const { t } = useLanguage();
+
+  const handleQuestionClick = (index: number) => {
+    onButtonClick?.();
+    setOpenIndex(openIndex === index ? null : index);
+  };
 
   return (
     <section className="py-20 px-4 bg-muted/20">
@@ -42,15 +53,15 @@ export const FAQ = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Частые вопросы
+            {t('faq.title')}
           </h2>
           <p className="text-xl text-muted-foreground">
-            Всё, что важно знать перед началом использования
+            {t('faq.subtitle')}
           </p>
         </motion.div>
 
         <div className="space-y-4">
-          {faqItems.map((item, index) => (
+          {faqItemsData.map((item, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 10 }}
@@ -60,10 +71,12 @@ export const FAQ = () => {
               className="bg-card border border-border rounded-2xl overflow-hidden"
             >
               <button
-                onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                onClick={() => handleQuestionClick(index)}
                 className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-muted/50 transition-colors"
               >
-                <span className="font-semibold text-lg pr-4">{item.question}</span>
+                <span className="font-semibold text-lg pr-4">
+                  {t(item.questionKey)}
+                </span>
                 <span className="text-2xl text-muted-foreground flex-shrink-0">
                   {openIndex === index ? '−' : '+'}
                 </span>
@@ -78,7 +91,7 @@ export const FAQ = () => {
                   className="px-6 pb-4"
                 >
                   <p className="text-muted-foreground leading-relaxed">
-                    {item.answer}
+                    {t(item.answerKey)}
                   </p>
                 </motion.div>
               )}
@@ -96,20 +109,13 @@ export const FAQ = () => {
         >
           <div className="bg-primary/10 border border-primary/20 rounded-2xl p-8">
             <h3 className="text-2xl font-semibold text-foreground mb-3">
-              Остались вопросы?
+              {t('faq.cta.title')}
             </h3>
             <p className="text-muted-foreground mb-4">
-              Напишите <a 
-                href="https://t.me/vote_vog" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="font-semibold text-primary hover:underline transition-all"
-              >
-                основателю в Telegram
-              </a> - мы ответим в течение 24 часов
+              {t('faq.cta.description')}
             </p>
             <p className="text-sm text-muted-foreground">
-              ⚡ Среднее время ответа: 30 минут
+              {t('faq.cta.responseTime')}
             </p>
           </div>
         </motion.div>

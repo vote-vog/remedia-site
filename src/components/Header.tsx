@@ -1,9 +1,10 @@
 // src/components/Header.tsx
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, Languages } from "lucide-react";
 import remediaIcon from "@/assets/remedia-icon.png";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/hooks/useLanguage";
 
 // 🎯 Интерфейс пропсов для кнопки профиля
 interface HeaderProps {
@@ -19,6 +20,7 @@ export const Header = ({
 }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const { language, toggleLanguage, t } = useLanguage();
 
   useEffect(() => {
     setIsMounted(true);
@@ -65,6 +67,15 @@ export const Header = ({
     setIsMenuOpen(false);
   };
 
+  // Навигационные элементы
+  const navItems = [
+    { id: 'hero', label: t('header.nav.features') },
+    { id: 'demo', label: t('header.nav.demo') },
+    { id: 'calculator', label: t('header.nav.calculator') },
+    { id: 'benefits', label: t('header.nav.benefits') },
+    { id: 'faq', label: t('header.nav.faq') },
+  ];
+
   if (!isMounted) {
     return (
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -107,13 +118,7 @@ export const Header = ({
 
           {/* Десктопная навигация */}
           <nav className="hidden lg:flex items-center gap-8">
-            {[
-              { id: 'hero', label: 'Возможности' },
-              { id: 'demo', label: 'Демо' },
-              { id: 'calculator', label: 'Калькулятор' },
-              { id: 'benefits', label: 'Преимущества' },
-              { id: 'faq', label: 'FAQ' },
-            ].map((item) => (
+            {navItems.map((item) => (
               <motion.button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
@@ -134,11 +139,29 @@ export const Header = ({
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
               whileHover={{ y: -1 }}
             >
-              Контакты
+              {t('header.nav.contacts')}
             </motion.button>
           </nav>
 
           <div className="flex items-center gap-4">
+            {/* 🎯 ПЕРЕКЛЮЧАТЕЛЬ ЯЗЫКА - ВСЕГДА ВИДЕН */}
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Button
+                onClick={toggleLanguage}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
+              >
+                <Languages size={16} className="text-gray-500" />
+                <span className="font-medium">
+                  {language === 'ru' ? 'EN' : 'RU'}
+                </span>
+              </Button>
+            </motion.div>
+
             {/* 🎯 КНОПКА ПРОФИЛЯ (только для авторизованных) */}
             {isLoggedIn && (
               <motion.div
@@ -159,7 +182,7 @@ export const Header = ({
                     />
                   </div>
                   <span className="font-medium">
-                    {userDisplayName || "Аккаунт"}
+                    {userDisplayName || t('header.profile.account')}
                   </span>
                 </Button>
               </motion.div>
@@ -186,20 +209,33 @@ export const Header = ({
             transition={{ duration: 0.2 }}
           >
             <div className="flex flex-col gap-0 px-4 py-4">
-              {[
-                { id: 'hero', label: 'Возможности' },
-                { id: 'demo', label: 'Демо' },
-                { id: 'calculator', label: 'Калькулятор' },
-                { id: 'benefits', label: 'Преимущества' },
-                { id: 'faq', label: 'FAQ' },
-              ].map((item, index) => (
+              {/* 🎯 ПЕРЕКЛЮЧАТЕЛЬ ЯЗЫКА В МОБИЛЬНОМ МЕНЮ */}
+              <motion.div
+                className="pb-3 mb-2 border-b border-border"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0 }}
+              >
+                <Button
+                  onClick={toggleLanguage}
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2 border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 py-3"
+                >
+                  <Languages size={16} className="text-blue-600" />
+                  <span className="font-medium">
+                    {language === 'ru' ? 'Switch to English' : 'Переключить на Русский'}
+                  </span>
+                </Button>
+              </motion.div>
+
+              {navItems.map((item, index) => (
                 <motion.button
                   key={item.id}
                   onClick={() => scrollToSection(item.id)}
                   className="text-left py-3 px-2 text-base font-medium text-foreground/80 hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: (index + 1) * 0.1 }}
                   whileHover={{ x: 4 }}
                 >
                   {item.label}
@@ -213,7 +249,7 @@ export const Header = ({
                 transition={{ delay: 0.5 }}
                 whileHover={{ x: 4 }}
               >
-                Контакты
+                {t('header.nav.contacts')}
               </motion.button>
 
               {/* 🎯 МОБИЛЬНАЯ ВЕРСИЯ КНОПКИ ПРОФИЛЯ */}
@@ -231,7 +267,7 @@ export const Header = ({
                   >
                     <User size={16} className="text-green-600" />
                     <span className="font-medium">
-                      {userDisplayName || "Аккаунт"}
+                      {userDisplayName || t('header.profile.account')}
                     </span>
                   </Button>
                 </motion.div>
