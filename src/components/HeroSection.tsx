@@ -9,7 +9,7 @@ interface HeroSectionProps {
   onButtonClick?: () => void;
 }
 
-// Компонент для фич с умным ховером
+// Компонент для фич с умным ховером/тапом
 const FeatureWithDetails = ({ 
   icon, 
   titleKey, 
@@ -23,188 +23,226 @@ const FeatureWithDetails = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [detailLevel, setDetailLevel] = useState(0);
   const { t } = useLanguage();
   
-  // Определяем тип устройства
   const isTouchDevice = typeof window !== 'undefined' ? 
     ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) : false;
-  
-  const interactionDelay = isTouchDevice ? 0 : 500;
 
-  // Умная логика раскрытия на ховер
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    
-    if (isHovered) {
-      timer = setTimeout(() => {
-        setIsExpanded(true);
-        setDetailLevel(1);
-        
-        if (!isTouchDevice) {
-          setTimeout(() => setDetailLevel(2), 800);
-        }
-      }, interactionDelay);
-    } else {
-      setIsExpanded(false);
-      setDetailLevel(0);
+  const handleInteractionStart = () => {
+    if (!isTouchDevice) {
+      setIsHovered(true);
     }
-    
-    return () => clearTimeout(timer);
-  }, [isHovered, interactionDelay, isTouchDevice]);
+  };
+
+  const handleInteractionEnd = () => {
+    if (!isTouchDevice) {
+      setIsHovered(false);
+    }
+  };
 
   const handleClick = () => {
     if (isTouchDevice) {
       setIsExpanded(!isExpanded);
-      setDetailLevel(isExpanded ? 0 : 2);
     }
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isExpanded && isTouchDevice) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isExpanded, isTouchDevice]);
+
+  const showDetails = isExpanded || (!isTouchDevice && isHovered);
+  const showIndicator = !showDetails;
+
   return (
     <motion.div 
-      className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-mint-200 hover:border-mint-300 transition-all cursor-pointer group relative"
-      whileHover={{ y: -2, scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onHoverStart={() => !isTouchDevice && setIsHovered(true)}
-      onHoverEnd={() => !isTouchDevice && setIsHovered(false)}
-      onTouchStart={() => isTouchDevice && setIsHovered(true)}
-      onTouchEnd={() => isTouchDevice && setTimeout(() => setIsHovered(false), 150)}
-      onClick={handleClick}
+      className="bg-white/90 backdrop-blur-sm rounded-xl p-4 border-2 border-mint-200 hover:border-mint-400 transition-all duration-300 cursor-pointer group relative overflow-hidden"
+      whileHover={!isTouchDevice ? { y: -4, scale: 1.02 } : {}}
+      whileTap={isTouchDevice ? { scale: 0.98 } : {}}
+      onHoverStart={handleInteractionStart}
+      onHoverEnd={handleInteractionEnd}
+      onClick={(e) => {
+        e.stopPropagation();
+        handleClick();
+      }}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5 }}
     >
-      {/* Микро-анимация "приглашения" */}
-      {!isHovered && !isExpanded && (
-        <motion.div
-          className="absolute -top-1 -right-1 w-3 h-3 bg-mint-400 rounded-full opacity-70"
-          animate={{
-            scale: [1, 1.5, 1],
-            opacity: [0.7, 1, 0.7],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            repeatType: "reverse"
-          }}
-        />
+      {/* Градиентная подсветка при взаимодействии */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-mint-100/50 to-transparent opacity-0"
+        animate={{ opacity: showDetails ? 1 : 0 }}
+        transition={{ duration: 0.3 }}
+      />
+
+      {/* Анимированный бордер */}
+      <motion.div
+        className="absolute inset-0 rounded-xl border-2 border-transparent"
+        animate={{ 
+          borderColor: showDetails ? 'rgba(34, 197, 94, 0.3)' : 'transparent'
+        }}
+        transition={{ duration: 0.3 }}
+      />
+
+      {/* Пульсирующий индикатор с анимацией "дыхания" */}
+      {showIndicator && (
+        <div className="absolute -top-2 -right-2">
+          <motion.div
+            className="w-4 h-4 bg-gradient-to-br from-mint-400 to-mint-600 rounded-full shadow-lg"
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.8, 1, 0.8],
+              boxShadow: [
+                '0 0 0 0 rgba(34, 197, 94, 0.7)',
+                '0 0 0 6px rgba(34, 197, 94, 0)',
+                '0 0 0 0 rgba(34, 197, 94, 0)'
+              ],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              repeatType: "loop"
+            }}
+          />
+          {/* Внутренняя точка */}
+          <motion.div
+            className="absolute inset-0 m-auto w-1 h-1 bg-white rounded-full"
+            animate={{
+              scale: [1, 1.5, 1],
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
+          />
+        </div>
       )}
 
-      {/* Заголовок с умным индикатором */}
-      <div className="flex items-center gap-3">
-        <motion.div 
-          className="text-2xl"
-          animate={{ 
-            scale: isHovered ? 1.1 : 1,
-            rotate: isHovered ? 5 : 0
-          }}
-          transition={{ duration: 0.3 }}
-        >
-          {icon}
-        </motion.div>
-        
-        <div className="flex-1">
-          <h4 className="font-semibold text-platinum-900 text-sm">
-            {t(titleKey)}
-          </h4>
-          <p className="text-xs text-platinum-700 mt-1 leading-relaxed">
-            {t(benefitKey)}
-          </p>
-        </div>
-        
-        {/* Умный индикатор состояния */}
-        <motion.div
-          animate={{ 
-            rotate: isExpanded ? 180 : 0,
-            scale: isHovered ? 1.2 : 1
-          }}
-          className="text-mint-500 transition-colors flex-shrink-0"
-          transition={{ duration: 0.3 }}
-        >
-          {isHovered || isExpanded ? "🔍" : "📖"}
-        </motion.div>
-      </div>
-
-      {/* Плавное раскрытие механизма работы */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, y: -10 }}
-            animate={{ opacity: 1, height: "auto", y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -10 }}
-            transition={{ 
-              duration: 0.4,
-              ease: "easeOut"
+      {/* Контент карточки */}
+      <div className="relative z-10">
+        <div className="flex items-center gap-3">
+          <motion.div 
+            className="text-2xl relative"
+            animate={{ 
+              scale: showDetails ? 1.15 : 1,
+              rotate: showDetails ? 5 : 0
             }}
-            className="mt-3 pt-3 border-t border-mint-100"
+            transition={{ duration: 0.3, type: "spring" }}
           >
-            <motion.div 
-              className="text-xs text-platinum-600 bg-mint-50 rounded-lg p-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
+            {icon}
+            {/* Свечение иконки */}
+            <motion.div
+              className="absolute inset-0 text-2xl blur-sm opacity-0"
+              animate={{ opacity: showDetails ? 0.3 : 0 }}
+              transition={{ duration: 0.3 }}
             >
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex items-center gap-2 mb-2"
-              >
-                <span className="text-mint-600">🛠️</span>
-                <strong className="text-mint-700 text-sm">
-                  {t('hero.howItWorks') || 'Как это работает:'}
-                </strong>
-              </motion.div>
-              
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="leading-relaxed"
-              >
-                {t(mechanismKey)}
-              </motion.p>
-
-              {/* Индикатор прогресса чтения для десктопа */}
-              {!isTouchDevice && detailLevel > 0 && (
-                <motion.div 
-                  className="flex gap-1 mt-2 justify-end"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  {[1, 2].map((level) => (
-                    <motion.div
-                      key={level}
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        detailLevel >= level ? 'bg-mint-500' : 'bg-mint-200'
-                      }`}
-                      animate={{
-                        scale: detailLevel >= level ? 1.2 : 1
-                      }}
-                    />
-                  ))}
-                </motion.div>
-              )}
+              {icon}
             </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Подсказка для пользователя */}
-      {!isTouchDevice && !isExpanded && (
-        <motion.div
-          className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-          initial={{ y: 5 }}
-          animate={{ y: 0 }}
-        >
-          <div className="bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap">
-            {t('hero.hoverHint') || 'Наведите для деталей'}
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+          
+          <div className="flex-1">
+            <motion.h4 
+              className="font-semibold text-platinum-900 text-sm"
+              animate={{ color: showDetails ? '#059669' : '#1f2937' }}
+              transition={{ duration: 0.2 }}
+            >
+              {t(titleKey)}
+            </motion.h4>
+            <p className="text-xs text-platinum-700 mt-1 leading-relaxed">
+              {t(benefitKey)}
+            </p>
           </div>
-        </motion.div>
-      )}
+          
+          {/* Анимированный индикатор состояния с подсказкой */}
+          <motion.div
+            className="relative"
+            animate={{ 
+              rotate: showDetails ? 180 : 0,
+              scale: showDetails ? 1.3 : 1
+            }}
+            transition={{ duration: 0.3, type: "spring" }}
+          >
+            <div className="text-mint-500 transition-colors flex-shrink-0">
+              {showDetails ? "🔍" : "📖"}
+            </div>
+            
+            {/* Микро-анимация вокруг индикатора */}
+            {showIndicator && (
+              <motion.div
+                className="absolute inset-0 border-2 border-mint-300 rounded-full"
+                animate={{
+                  scale: [1, 1.4, 1],
+                  opacity: [0, 0.5, 0],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatType: "loop"
+                }}
+              />
+            )}
+          </motion.div>
+        </div>
+
+        {/* Плавное раскрытие механизма работы */}
+        <AnimatePresence>
+          {showDetails && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -10 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -10 }}
+              transition={{ 
+                duration: 0.4,
+                ease: "easeOut"
+              }}
+              className="mt-3 pt-3 border-t border-mint-100"
+            >
+              <motion.div 
+                className="text-xs text-platinum-600 bg-white/80 rounded-lg p-3 border border-mint-100"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1 }}
+              >
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="flex items-center gap-2 mb-2"
+                >
+                  <motion.span 
+                    className="text-mint-600"
+                    animate={{ rotate: [0, 10, 0] }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                  >
+                    🛠️
+                  </motion.span>
+                  <strong className="text-mint-700 text-sm">
+                    {t('hero.howItWorks') || 'Как это работает:'}
+                  </strong>
+                </motion.div>
+                
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="leading-relaxed"
+                >
+                  {t(mechanismKey)}
+                </motion.p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 };

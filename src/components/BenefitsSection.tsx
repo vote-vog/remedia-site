@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useSafeHTML } from "@/hooks/useSafeHTML";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const benefitsData = [
   {
@@ -13,7 +13,7 @@ const benefitsData = [
     hoverKey: "0"
   },
   {
-    icon: " 🧘 ",
+    icon: "🧘",
     titleKey: "benefits.items.1.title", 
     descriptionKey: "benefits.items.1.description",
     hoverKey: "1"
@@ -32,11 +32,6 @@ interface HoverItem {
   description: string;
 }
 
-interface HoverData {
-  title: string;
-  items: HoverItem[];
-}
-
 interface InteractiveBenefitCardProps {
   icon: string;
   titleKey: string;
@@ -52,8 +47,12 @@ const InteractiveBenefitCard = ({
   hoverKey,
   index 
 }: InteractiveBenefitCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const { t } = useLanguage();
+
+  const isTouchDevice = typeof window !== 'undefined' ? 
+    ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) : false;
 
   // Получаем данные для ховера через отдельные ключи
   const hoverTitle = t(`benefits.hoverDetails.${hoverKey}.title`);
@@ -77,77 +76,179 @@ const InteractiveBenefitCard = ({
 
   const safeDescription = useSafeHTML(t(descriptionKey));
 
+  const handleInteractionStart = () => {
+    if (!isTouchDevice) {
+      setIsHovered(true);
+    }
+  };
+
+  const handleInteractionEnd = () => {
+    if (!isTouchDevice) {
+      setIsHovered(false);
+    }
+  };
+
+  const handleClick = () => {
+    if (isTouchDevice) {
+      setIsExpanded(!isExpanded);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isExpanded && isTouchDevice) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isExpanded, isTouchDevice]);
+
+  const showDetails = isExpanded || (!isTouchDevice && isHovered);
+  const showIndicator = !showDetails;
+
   return (
     <motion.div 
-      className="bg-white p-8 rounded-2xl border border-mint-200 hover:border-mint-300 hover:shadow-luxury transition-all duration-300 cursor-pointer relative group h-full"
-      whileHover={{ y: -4, scale: 1.02 }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
+      className="bg-white p-8 rounded-2xl border-2 border-mint-200 hover:border-mint-400 hover:shadow-luxury transition-all duration-300 cursor-pointer relative group h-full overflow-hidden"
+      whileHover={!isTouchDevice ? { y: -6, scale: 1.02 } : {}}
+      onHoverStart={handleInteractionStart}
+      onHoverEnd={handleInteractionEnd}
+      onClick={(e) => {
+        e.stopPropagation();
+        handleClick();
+      }}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
-      <div className="text-5xl mb-4">{icon}</div>
-      <h3 className="text-2xl font-semibold text-platinum-900 mb-3">
-        {t(titleKey)}
-      </h3>
-      <div 
-        className="text-platinum-700 leading-relaxed mb-4"
-        dangerouslySetInnerHTML={safeDescription}
+      {/* Фоновая подсветка */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-mint-50/80 to-transparent opacity-0"
+        animate={{ opacity: showDetails ? 1 : 0 }}
+        transition={{ duration: 0.3 }}
       />
 
-      <AnimatePresence>
-        {isHovered && hoverItems.length > 0 && (
+      {/* Анимированный индикатор с пульсацией */}
+      {showIndicator && (
+        <div className="absolute -top-3 -right-3">
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
+            className="w-6 h-6 bg-gradient-to-br from-mint-500 to-mint-600 rounded-full shadow-lg flex items-center justify-center"
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.9, 1, 0.9],
+              boxShadow: [
+                '0 0 0 0 rgba(34, 197, 94, 0.7)',
+                '0 0 0 8px rgba(34, 197, 94, 0)',
+                '0 0 0 0 rgba(34, 197, 94, 0)'
+              ],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              repeatType: "loop"
+            }}
           >
-            <div className="pt-4 border-t border-mint-100">
-              <h4 className="font-semibold text-platinum-800 mb-4 text-lg">
-                {hoverTitle}
-              </h4>
-              <div className="space-y-4">
-                {hoverItems.map((item: HoverItem, idx: number) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className="flex items-start gap-3"
-                  >
-                    <div className="text-2xl flex-shrink-0 mt-1">{item.icon}</div>
-                    <div className="flex-1">
-                      <h5 className="font-medium text-platinum-900 text-sm mb-1">
-                        {item.title}
-                      </h5>
-                      <p className="text-platinum-600 text-xs leading-relaxed">
-                        {item.description}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
+            <motion.div
+              className="w-1.5 h-1.5 bg-white rounded-full"
+              animate={{
+                scale: [1, 1.5, 1],
+              }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+            />
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Индикатор ховера */}
-      {!isHovered && (
-        <motion.div
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute -bottom-2 left-1/2 transform -translate-x-1/2"
-        >
-          <div className="bg-mint-500 text-white text-xs py-1 px-2 rounded whitespace-nowrap shadow-sm">
-            Наведите для деталей
-          </div>
-        </motion.div>
+        </div>
       )}
+
+      <div className="relative z-10">
+        {/* Иконка с анимацией */}
+        <motion.div 
+          className="text-5xl mb-4 relative inline-block"
+          animate={{ 
+            scale: showDetails ? 1.1 : 1,
+            rotate: showDetails ? 3 : 0
+          }}
+          transition={{ duration: 0.3, type: "spring" }}
+        >
+          {icon}
+          {/* Свечение иконки */}
+          <motion.div
+            className="absolute inset-0 text-5xl blur-md opacity-0"
+            animate={{ opacity: showDetails ? 0.2 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {icon}
+          </motion.div>
+        </motion.div>
+
+        <motion.h3 
+          className="text-2xl font-semibold text-platinum-900 mb-3"
+          animate={{ color: showDetails ? '#059669' : '#1f2937' }}
+          transition={{ duration: 0.2 }}
+        >
+          {t(titleKey)}
+        </motion.h3>
+        
+        <div 
+          className="text-platinum-700 leading-relaxed mb-4"
+          dangerouslySetInnerHTML={safeDescription}
+        />
+
+        <AnimatePresence>
+          {showDetails && hoverItems.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="pt-4 border-t border-mint-100">
+                <motion.h4 
+                  className="font-semibold text-platinum-800 mb-4 text-lg"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  {hoverTitle}
+                </motion.h4>
+                <div className="space-y-4">
+                  {hoverItems.map((item: HoverItem, idx: number) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="flex items-start gap-3"
+                    >
+                      <motion.div 
+                        className="text-2xl flex-shrink-0 mt-1"
+                        whileHover={{ scale: 1.1 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        {item.icon}
+                      </motion.div>
+                      <div className="flex-1">
+                        <h5 className="font-medium text-platinum-900 text-sm mb-1">
+                          {item.title}
+                        </h5>
+                        <p className="text-platinum-600 text-xs leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 };

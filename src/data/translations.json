@@ -43,7 +43,7 @@
         "symptoms": "Отслеживание симптомов в чате",
         "therapy": "Отслеживание терапии",
         "analysis": "Анализ образа жизни и других факторов",
-        "goals": "Постановка целей"
+        "goals": "Ставьте цели и достигайте"
       },
       "benefits": {
         "chat": "Просто пишите в чат - не нужно заполнять формы и искать кнопки",
@@ -706,7 +706,7 @@
         "symptoms": "Symptom tracking in chat",
         "therapy": "Therapy tracking",
         "analysis": "Lifestyle and factor analysis",
-        "goals": "Goal Setting"
+        "goals": "Set Goals and achieve them"
       },
       "benefits": {
         "chat": "Just write in chat - no need to fill out forms and search for buttons",
