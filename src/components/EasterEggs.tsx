@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import { 
   X, Sparkles, Heart, Zap, Users, Target, Clock, Brain, Shield, Rocket, 
-  Cpu, Activity, Dna, Network, Globe, Trophy, Star, Award
+  Cpu, Activity, Dna, Network, Globe, Trophy, Star, Award,
+  Twitter, Linkedin, Facebook, MessageCircle, MessageSquare, Link
 } from 'lucide-react';
 import { useEngagementTracker } from '../hooks/useEngagementTracker';
 import { useLanguage } from '../hooks/useLanguage';
+import { useShare } from '../hooks/useShare';
 
 interface EasterEgg {
   id: string;
@@ -26,7 +28,115 @@ interface EasterEggsProps {
   anyButtonClicked?: boolean;
 }
 
+// Компонент кнопок шаринга
+const ShareButtons = ({ eggId, onShare }: { eggId: string; onShare?: (platform: string) => void }) => {
+  const { shareToPlatform, copyToClipboard } = useShare();
+  const [copied, setCopied] = useState(false);
+
+  const platforms = [
+    { id: 'twitter', icon: Twitter, color: '#1DA1F2', label: 'Twitter' },
+    { id: 'linkedin', icon: Linkedin, color: '#0077B5', label: 'LinkedIn' },
+    { id: 'facebook', icon: Facebook, color: '#1877F2', label: 'Facebook' },
+    { id: 'telegram', icon: MessageCircle, color: '#0088CC', label: 'Telegram' },
+    { id: 'whatsapp', icon: MessageSquare, color: '#25D366', label: 'WhatsApp' },
+  ];
+
+  const handleShare = async (platform: string) => {
+    if (platform === 'copy') {
+      const success = await copyToClipboard(eggId);
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        if (onShare) onShare('copy');
+      }
+    } else {
+      shareToPlatform(platform, eggId);
+      if (onShare) onShare(platform);
+    }
+  };
+
+  return (
+    <div className="mt-6 pt-4 border-t border-gray-200">
+      <p className="text-sm text-gray-600 mb-3 text-center">
+        Поделиться открытием:
+      </p>
+      <div className="flex justify-center gap-2">
+        {platforms.map((platform) => {
+          const Icon = platform.icon;
+          return (
+            <motion.button
+              key={platform.id}
+              whileHover={{ scale: 1.1, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleShare(platform.id)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:shadow-lg"
+              style={{ backgroundColor: platform.color }}
+              title={`Поделиться в ${platform.label}`}
+            >
+              <Icon size={14} className="text-white" />
+            </motion.button>
+          );
+        })}
+        
+        <motion.button
+          whileHover={{ scale: 1.1, y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => handleShare('copy')}
+          className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-600 hover:bg-gray-700 transition-all duration-200 hover:shadow-lg"
+          title="Скопировать ссылку"
+        >
+          <Link size={14} className="text-white" />
+        </motion.button>
+      </div>
+
+      <AnimatePresence>
+        {copied && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded text-xs"
+          >
+            ✅ Скопировано!
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Компонент прогресса сбора яиц
+const EggProgress = ({ viewedCount, totalCount }: { viewedCount: number; totalCount: number }) => {
+  const progress = (viewedCount / totalCount) * 100;
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="fixed top-4 left-4 z-30 bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg border"
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <Sparkles className="w-4 h-4 text-cyan-500" />
+        <span className="text-sm font-medium text-gray-700">
+          {viewedCount}/{totalCount}
+        </span>
+      </div>
+      <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+        <motion.div 
+          className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.8 }}
+        />
+      </div>
+    </motion.div>
+  );
+};
+
 const EggContent = ({ egg, onClose }: { egg: EasterEgg; onClose: () => void }) => {
+  const { trackEngagement } = useEngagementTracker();
+  const [shared, setShared] = useState(false);
+
   const getEggColor = (eggId: string) => {
     const colors: { [key: string]: string } = {
       'for-everyone': 'rgba(16, 185, 129, 0.8)',
@@ -41,6 +151,15 @@ const EggContent = ({ egg, onClose }: { egg: EasterEgg; onClose: () => void }) =
       'health-ecosystem': 'rgba(6, 182, 212, 0.8)'
     };
     return colors[eggId] || 'rgba(6, 182, 212, 0.8)';
+  };
+
+  const handleShare = (platform: string) => {
+    setShared(true);
+    trackEngagement('egg_shared', { 
+      egg_id: egg.id, 
+      platform 
+    });
+    setTimeout(() => setShared(false), 1500);
   };
 
   return (
@@ -66,9 +185,11 @@ const EggContent = ({ egg, onClose }: { egg: EasterEgg; onClose: () => void }) =
       </div>
       
       <p 
-        className="text-gray-700 leading-relaxed text-sm"
+        className="text-gray-700 leading-relaxed text-sm mb-2"
         dangerouslySetInnerHTML={{ __html: egg.content }}
       />
+      
+      <ShareButtons eggId={egg.id} onShare={handleShare} />
       
       <motion.div
         className="flex gap-1 mt-4 justify-end"
@@ -93,6 +214,19 @@ const EggContent = ({ egg, onClose }: { egg: EasterEgg; onClose: () => void }) =
           />
         ))}
       </motion.div>
+
+      <AnimatePresence>
+        {shared && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            ✅ Спасибо за шаринг!
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -504,26 +638,9 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
 
   return (
     <>
-      {/* Кнопка для тестирования (временно) */}
-      {process.env.NODE_ENV === 'development' && (
-        <button 
-          onClick={() => setActiveEggs(prev => new Set(prev).add('for-everyone'))}
-          style={{ 
-            position: 'fixed', 
-            top: 10, 
-            right: 10, 
-            zIndex: 1000,
-            background: '#06b6d4',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '8px',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }}
-        >
-          Тест яйцо
-        </button>
+      {/* Прогресс сбора яиц */}
+      {viewedEggs.size > 0 && (
+        <EggProgress viewedCount={viewedEggs.size} totalCount={eggs.length} />
       )}
 
       {/* Плавающие капсулки с физикой */}
@@ -679,6 +796,11 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
                       className="text-gray-700 text-lg leading-relaxed mb-6"
                       dangerouslySetInnerHTML={{ __html: t('easterEggs.completion.description') }}
                     />
+
+                    {/* Кнопки шаринга для достижения */}
+                    <div className="mb-6">
+                      <ShareButtons eggId={viewedEggs.size >= eggs.length ? 'completion-all' : 'completion-3'} />
+                    </div>
 
                     <motion.div
                       initial={{ opacity: 0, scale: 0.8 }}
