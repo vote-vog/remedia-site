@@ -97,7 +97,7 @@ const EggContent = ({ egg, onClose }: { egg: EasterEgg; onClose: () => void }) =
 };
 
 export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = false }: EasterEggsProps) => {
-  const { trackEngagement } = useEngagementTracker();
+  const { trackEggView, trackEngagement } = useEngagementTracker(); // 🔥 Используем trackEggView
   const { t } = useLanguage();
   const [activeEggs, setActiveEggs] = useState<Set<string>>(new Set());
   const [visibleEgg, setVisibleEgg] = useState<string | null>(null);
@@ -198,22 +198,6 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     }
   ];
 
-  // В функции trackEggEvent добавляем сессионные данные:
-  const trackEggEvent = useCallback((eggId: string, eggTitle: string, eventType: 'view' | 'collect_all') => {
-    const egg = eggs.find(e => e.id === eggId);
-    
-    trackEngagement(`egg_${eventType}`, {
-      egg_id: eggId,
-      egg_title: eggTitle,
-      eggs_viewed_count: viewedEggs.size + 1,
-      egg_position: egg?.position,
-      session_eggs: viewedEggs.size + 1,
-      is_priority_egg: ['for-everyone', 'token-economy', 'founder-story'].includes(eggId),
-      egg_trigger_type: egg?.trigger,
-      total_available_eggs: eggs.length
-    });
-  }, [trackEngagement, viewedEggs.size, eggs]);
-
   // Восстанавливаем состояние из sessionStorage при загрузке
   useEffect(() => {
     const savedViewedEggs = sessionStorage.getItem('easterEggs_viewed');
@@ -306,12 +290,16 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     
     if (allCompleted && newViewedEggs.size === allEggIds.length) {
       console.log('🎉 Все пасхалки собраны!');
-      trackEggEvent('all', t('easterEggs.completion.allEggs'), 'collect_all');
+      // 🔥 Трекаем сбор всех пасхалок через trackEngagement
+      trackEngagement('all_eggs_collected', {
+        total_eggs: allEggIds.length,
+        session_eggs: newViewedEggs.size
+      });
       setTimeout(() => {
         setShowCompletionPopup(true);
       }, 1000);
     }
-  }, [eggs, trackEggEvent, t]);
+  }, [eggs, trackEngagement]);
 
   const handleEggClick = useCallback((eggId: string) => {
     if (!activeEggs.has(eggId) && canActivateEgg(eggId)) {
@@ -319,12 +307,9 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     }
     setVisibleEgg(eggId);
     
-    // Трекаем просмотр яйца
-    const egg = eggs.find(e => e.id === eggId);
-    if (egg) {
-      trackEggEvent(eggId, egg.title, 'view');
-    }
-  }, [activeEggs, canActivateEgg, eggs, trackEggEvent]);
+    // 🔥 Трекаем просмотр яйца через trackEggView
+    trackEggView(eggId);
+  }, [activeEggs, canActivateEgg, trackEggView]);
 
   const closeEgg = useCallback((eggId: string) => {
     setVisibleEgg(null);

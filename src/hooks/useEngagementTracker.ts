@@ -2,16 +2,19 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { useProgress } from './useProgress';
 
-// 🔥 ДОБАВЛЯЕМ ИНТЕРФЕЙСЫ ДЛЯ РАСШИРЕННОГО ТРЕКИНГА
 interface EngagementSession {
   sessionStart: number;
   actions: string[];
   maxScore: number;
+  lastAlertTime: number;
+  // 🔥 Храним просмотренные пасхалки и отправленные события
+  viewedEggs: Set<string>; // ID просмотренных пасхалок
+  sentEngagementEvents: Set<string>;
 }
 
 interface EngagementData {
   progress: number;
-  eggsCount: number;
+  eggsCount: number; // 🔥 Общее количество просмотренных пасхалок
   completedDemo: boolean;
   completedCalculator: boolean;
   usedCredit: boolean;
@@ -22,33 +25,72 @@ interface EngagementData {
   totalActions: number;
 }
 
-// 🎯 ФУНКЦИЯ РАСЧЕТА БАЛЛА ВОВЛЕЧЕННОСТИ (ПЕРЕМЕЩЕНА ВВЕРХ)
+// 🎯 КЛЮЧЕВЫЕ СОБЫТИЯ ВОВЛЕЧЕННОСТИ
+const ENGAGEMENT_EVENTS = {
+  // 🔥 ПАСХАЛКИ (трекаем при достижении порогов)
+  EGGS: [
+    'eggs_3_viewed',    // Просмотрено 3 пасхалки
+    'eggs_7_viewed',    // Просмотрено 7 пасхалок  
+    'eggs_9_viewed',    // Просмотрено 9 пасхалок
+    'eggs_10_viewed'    // Просмотрено все 10 пасхалок
+  ],
+  // 🔥 КЛЮЧЕВЫЕ АКТИВНОСТИ
+  ACTIVITIES: [
+    'demo_completed',   // Пройден демо-чат
+    'first_referral'    // Первый реферал
+  ]
+} as const;
+
+// 🎯 ФУНКЦИЯ ПРОВЕРКИ СОБЫТИЙ ПАСХАЛОК
+const checkEggEngagementEvents = (eggsCount: number, sentEvents: Set<string>) => {
+  const events = [];
+  
+  if (eggsCount >= 3 && !sentEvents.has('eggs_3_viewed')) {
+    events.push('eggs_3_viewed');
+  }
+  if (eggsCount >= 7 && !sentEvents.has('eggs_7_viewed')) {
+    events.push('eggs_7_viewed');
+  }
+  if (eggsCount >= 9 && !sentEvents.has('eggs_9_viewed')) {
+    events.push('eggs_9_viewed');
+  }
+  if (eggsCount >= 10 && !sentEvents.has('eggs_10_viewed')) {
+    events.push('eggs_10_viewed');
+  }
+  
+  return events;
+};
+
+// 🎯 ФУНКЦИЯ ПРОВЕРКИ СОБЫТИЙ АКТИВНОСТЕЙ
+const checkActivityEngagementEvents = (
+  completedDemo: boolean, 
+  referrals: number, 
+  sentEvents: Set<string>
+) => {
+  const events = [];
+  
+  if (completedDemo && !sentEvents.has('demo_completed')) {
+    events.push('demo_completed');
+  }
+  if (referrals >= 1 && !sentEvents.has('first_referral')) {
+    events.push('first_referral');
+  }
+  
+  return events;
+};
+
 const calculateEngagementScore = (engagementData: EngagementData): number => {
   let score = 0;
-  
-  // Прогресс по сайту (макс 30 баллов)
   score += engagementData.progress * 0.3;
-  
-  // Собраны пасхалки (макс 20 баллов)
   score += Math.min(engagementData.eggsCount * 2, 20);
-  
-  // Завершены ключевые активности (макс 30 баллов)
   if (engagementData.completedDemo) score += 15;
   if (engagementData.completedCalculator) score += 15;
-  
-  // Использован кредит (10 баллов)
   if (engagementData.usedCredit) score += 10;
-  
-  // Рефералы (макс 10 баллов)
   score += Math.min(engagementData.referrals * 5, 10);
-  
-  // Длительность сессии (макс 10 баллов)
   score += Math.min(engagementData.sessionDuration / 60000, 10);
-  
   return Math.min(score, 100);
 };
 
-// 🎯 ФУНКЦИЯ ОПРЕДЕЛЕНИЯ УРОВНЯ ВОВЛЕЧЕННОСТИ
 const getEngagementLevel = (score: number): string => {
   if (score >= 80) return 'expert';
   if (score >= 60) return 'advanced';
@@ -57,20 +99,42 @@ const getEngagementLevel = (score: number): string => {
   return 'newcomer';
 };
 
-// 🔥 ОТПРАВКА В TELEGRAM ДЛЯ КРИТИЧЕСКИХ СОБЫТИЙ
-const sendEngagementAlert = async (engagementData: any) => {
+// 🔥 СООБЩЕНИЕ ДЛЯ СОБЫТИЙ ВОВЛЕЧЕННОСТИ
+const sendEngagementAlert = async (event: string, engagementData: any) => {
   const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
   const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
   
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
 
-  const message = `🎯 ENGAGEMENT ALERT
-📊 Score: ${engagementData.score}/100
+  // 🎯 ФОРМАТИРОВАНИЕ СООБЩЕНИЙ ДЛЯ РАЗНЫХ ТИПОВ СОБЫТИЙ
+  const eventTitles: Record<string, string> = {
+    'eggs_3_viewed': '🥚 Просмотрено 3 пасхалки',
+    'eggs_7_viewed': '🔍 Просмотрено 7 пасхалок', 
+    'eggs_9_viewed': '🎯 Просмотрено 9 пасхалок',
+    'eggs_10_viewed': '🏆 Все 10 пасхалок просмотрены!',
+    'demo_completed': '💬 Демо-чат пройден',
+    'first_referral': '🤝 Получен первый реферал'
+  };
+
+  const eventDescriptions: Record<string, string> = {
+    'eggs_3_viewed': 'Пользователь активно исследует сайт',
+    'eggs_7_viewed': 'Высокий уровень вовлеченности в контент',
+    'eggs_9_viewed': 'Почти все пасхалки найдены',
+    'eggs_10_viewed': 'Идеальное вовлечение - все пасхалки найдены!',
+    'demo_completed': 'Пользователь прошел демонстрацию функционала',
+    'first_referral': 'Начал привлекать других пользователей'
+  };
+
+  const message = `🎯 USER ENGAGEMENT EVENT
+${eventTitles[event]}
+📝 ${eventDescriptions[event]}
+📊 Engagement Score: ${engagementData.score}/100
 📈 Level: ${engagementData.level}
-🏆 Progress: ${engagementData.progress}%
-🥚 Eggs: ${engagementData.eggsCount}
+🏆 Overall Progress: ${engagementData.progress}%
+🥚 Total Eggs Viewed: ${engagementData.eggsCount}/10
+👥 Referrals: ${engagementData.referrals}
 ⏰ Session: ${Math.round(engagementData.sessionDuration / 60000)}min
-🔄 Actions: ${engagementData.totalActions}
+🔄 Total Actions: ${engagementData.totalActions}
 ⏰ ${new Date().toLocaleString('ru-RU')}`;
 
   try {
@@ -91,103 +155,117 @@ const sendEngagementAlert = async (engagementData: any) => {
 export const useEngagementTracker = () => {
   const { progress, completionPercentage } = useProgress();
   
-  // 🔥 СЕССИЯ ПОЛЬЗОВАТЕЛЯ ДЛЯ АНАЛИТИКИ ПОВЕДЕНИЯ
   const sessionRef = useRef<EngagementSession>({
     sessionStart: Date.now(),
     actions: [],
-    maxScore: 0
+    maxScore: 0,
+    lastAlertTime: 0,
+    viewedEggs: new Set(), // 🔥 Храним ID просмотренных пасхалок
+    sentEngagementEvents: new Set()
   });
 
-  // 🔥 ОПРЕДЕЛЕНИЕ КРИТИЧЕСКИХ СОБЫТИЙ
-  const isCriticalAction = useCallback((action: string) => {
-    const criticalActions = [
-      'waitlist_signup',
-      'founder_conversion', 
-      'all_eggs_collected',
-      'calculator_credit_used',
-      'demo_completed',
-      'progress_200_achieved'
-    ];
-    return criticalActions.includes(action);
+  // 🔥 ДОБАВЛЕНИЕ ПРОСМОТРЕННОЙ ПАСХАЛКИ
+  const trackEggView = useCallback((eggId: string) => {
+    // Добавляем пасхалку в Set (дубликаты игнорируются)
+    sessionRef.current.viewedEggs.add(eggId);
+    
+    // Получаем общее количество уникальных просмотренных пасхалок
+    const eggsCount = sessionRef.current.viewedEggs.size;
+    
+    console.log(`🥚 Egg viewed: ${eggId}, Total: ${eggsCount}/10`);
+    
+    // Трекаем событие с обновленным количеством
+    return trackEngagement('egg_viewed', { 
+      eggId,
+      eggsCount 
+    });
   }, []);
 
-  // 🔥 ОБНОВЛЕННАЯ ФУНКЦИЯ ТРЕКИНГА С СЕССИЕЙ
+  // 🔥 ПРОВЕРКА ЯВЛЯЕТСЯ ЛИ СОБЫТИЕ КЛЮЧЕВЫМ ДЛЯ ВОВЛЕЧЕННОСТИ
+  const isEngagementEvent = useCallback((event: string) => {
+    return [...ENGAGEMENT_EVENTS.EGGS, ...ENGAGEMENT_EVENTS.ACTIVITIES].includes(event);
+  }, []);
+
+  // 🔥 ОСНОВНАЯ ФУНКЦИЯ ТРЕКИНГА ВОВЛЕЧЕННОСТИ
   const trackEngagement = useCallback((action: string, additionalData?: any) => {
-    // Обновляем сессию
-    sessionRef.current.actions.push(action);
+    // Пропускаем авто-трекинг
+    if (action === 'auto_track') return null;
     
+    sessionRef.current.actions.push(action);
+    const currentTime = Date.now();
+    
+    // 🔥 РАСЧЕТ КОЛИЧЕСТВА ПРОСМОТРЕННЫХ ПАСХАЛОК
+    const eggsCount = sessionRef.current.viewedEggs.size;
+
     const engagementData: EngagementData = {
       progress: completionPercentage,
-      eggsCount: additionalData?.eggsCount || 0,
+      eggsCount: eggsCount, // 🔥 Используем реальное количество
       completedDemo: progress.demo || false,
       completedCalculator: progress.calculator || false,
       usedCredit: progress.calculatorCredit || false,
       referrals: progress.referralEvents || 0,
       email: progress.userEmail,
       lastAction: action,
-      sessionDuration: Date.now() - sessionRef.current.sessionStart,
+      sessionDuration: currentTime - sessionRef.current.sessionStart,
       totalActions: sessionRef.current.actions.length
     };
 
     const engagementScore = calculateEngagementScore(engagementData);
     const engagementLevel = getEngagementLevel(engagementScore);
-    
-    // Обновляем максимальный score сессии
     sessionRef.current.maxScore = Math.max(sessionRef.current.maxScore, engagementScore);
 
-    // 📊 Яндекс.Метрика - РАСШИРЕННЫЕ ПАРАМЕТРЫ
+    // 📊 Яндекс.Метрика
     if (window.ym) {
       window.ym(12345678, 'params', {
         engagement_score: engagementScore,
         engagement_level: engagementLevel,
-        engagement_progress: completionPercentage,
-        engagement_eggs: engagementData.eggsCount,
-        engagement_demo: engagementData.completedDemo,
-        engagement_calculator: engagementData.completedCalculator,
-        engagement_credit: engagementData.usedCredit,
-        engagement_referrals: engagementData.referrals,
-        
-        // 🔥 СЕССИОННЫЕ ДАННЫЕ
-        session_duration: engagementData.sessionDuration,
-        session_actions: engagementData.totalActions,
-        session_max_score: sessionRef.current.maxScore,
-        action_sequence: sessionRef.current.actions.join(' → '),
-        
+        eggs_count: eggsCount,
         last_action: action,
         ...additionalData
       });
-
-      console.log(`📊 Engagement: ${action} | Score: ${engagementScore} | Level: ${engagementLevel} | Session: ${engagementData.totalActions} actions`);
+      console.log(`📊 Engagement: ${action} | Eggs: ${eggsCount}/10 | Score: ${engagementScore}`);
     }
 
-    // 🔥 TELEGRAM ДЛЯ КРИТИЧЕСКИХ СОБЫТИЙ
-    if (engagementScore >= 25 || isCriticalAction(action)) {
-      sendEngagementAlert({
+    // 🔥 АВТОМАТИЧЕСКАЯ ПРОВЕРКА СОБЫТИЙ ВОВЛЕЧЕННОСТИ
+    const eggEvents = checkEggEngagementEvents(eggsCount, sessionRef.current.sentEngagementEvents);
+    const activityEvents = checkActivityEngagementEvents(
+      engagementData.completedDemo, 
+      engagementData.referrals, 
+      sessionRef.current.sentEngagementEvents
+    );
+    
+    const allEngagementEvents = [...eggEvents, ...activityEvents];
+    
+    // Отправляем события вовлеченности и помечаем как отправленные
+    allEngagementEvents.forEach(event => {
+      sendEngagementAlert(event, {
         ...engagementData,
         score: engagementScore,
-        level: engagementLevel,
-        session_actions: sessionRef.current.actions.length,
-        session_max_score: sessionRef.current.maxScore
+        level: engagementLevel
       });
-    }
+      
+      sessionRef.current.sentEngagementEvents.add(event);
+    });
 
     return {
       score: engagementScore,
       level: engagementLevel,
       data: engagementData,
-      session: sessionRef.current
+      session: sessionRef.current,
+      engagementEvents: allEngagementEvents
     };
-  }, [completionPercentage, progress, isCriticalAction]);
-
-  // 🔥 ФУНКЦИЯ ДЛЯ ПАТЧЕРНОГО ТРЕКИНГА (если нужно добавить в существующие компоненты)
-  const patchTrackEngagement = useCallback((component: string, action: string, data?: any) => {
-    return trackEngagement(`${component}_${action}`, data);
-  }, [trackEngagement]);
+  }, [completionPercentage, progress, isEngagementEvent]);
 
   return {
     trackEngagement,
-    patchTrackEngagement, // 🔥 ДЛЯ БЫСТРОГО ДОБАВЛЕНИЯ В СУЩЕСТВУЮЩИЙ КОД
-    currentEngagement: useMemo(() => trackEngagement('auto_track', { automatic: true }), [trackEngagement]),
-    getSession: () => sessionRef.current
+    trackEggView, // 🔥 СПЕЦИАЛЬНЫЙ МЕТОД ДЛЯ ТРЕКИНГА ПАСХАЛОК
+    getCurrentEngagement: () => trackEngagement('status_check'),
+    getSession: () => sessionRef.current,
+    // 🔥 ДОПОЛНИТЕЛЬНЫЕ МЕТОДЫ
+    trackDemoCompleted: () => trackEngagement('demo_completed'),
+    trackReferral: (referralsCount: number) => trackEngagement('referral_added', { referrals: referralsCount }),
+    // 🔥 ДЛЯ ОТЛАДКИ
+    getViewedEggsCount: () => sessionRef.current.viewedEggs.size,
+    getViewedEggs: () => Array.from(sessionRef.current.viewedEggs)
   };
 };
