@@ -59,7 +59,7 @@ export const RewardsPopup = ({
 
   // 🔥 TELEGRAM BOT CONFIG ДЛЯ ПОДПИСОК
   const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-  const TELEGRAM_CHAT_ID = import.meta.env.VITE_TEGRAM_CHAT_ID;
+  const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
   // 🔥 ФУНКЦИЯ ОПРЕДЕЛЕНИЯ РЕФЕРАЛЬНОГО ИСТОЧНИКА
   const getReferralSource = useCallback(() => {
