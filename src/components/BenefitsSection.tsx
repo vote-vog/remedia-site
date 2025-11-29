@@ -1,31 +1,156 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useSafeHTML } from "@/hooks/useSafeHTML";
+import { useState } from "react";
 
 const benefitsData = [
   {
     icon: "🔍",
     titleKey: "benefits.items.0.title",
-    descriptionKey: "benefits.items.0.description"
+    descriptionKey: "benefits.items.0.description",
+    hoverKey: "0"
   },
   {
-    icon: "💊",
-    titleKey: "benefits.items.1.title",
-    descriptionKey: "benefits.items.1.description"
+    icon: " 🧘 ",
+    titleKey: "benefits.items.1.title", 
+    descriptionKey: "benefits.items.1.description",
+    hoverKey: "1"
   },
   {
     icon: "🤝",
     titleKey: "benefits.items.2.title",
-    descriptionKey: "benefits.items.2.description"
-  },
-  {
-    icon: "🎯",
-    titleKey: "benefits.items.3.title",
-    descriptionKey: "benefits.items.3.description"
+    descriptionKey: "benefits.items.2.description",
+    hoverKey: "2"
   }
 ];
+
+interface HoverItem {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+interface HoverData {
+  title: string;
+  items: HoverItem[];
+}
+
+interface InteractiveBenefitCardProps {
+  icon: string;
+  titleKey: string;
+  descriptionKey: string;
+  hoverKey: string;
+  index: number;
+}
+
+const InteractiveBenefitCard = ({ 
+  icon, 
+  titleKey, 
+  descriptionKey,
+  hoverKey,
+  index 
+}: InteractiveBenefitCardProps) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const { t } = useLanguage();
+
+  // Получаем данные для ховера через отдельные ключи
+  const hoverTitle = t(`benefits.hoverDetails.${hoverKey}.title`);
+  const hoverItems = [
+    {
+      icon: t(`benefits.hoverDetails.${hoverKey}.items.0.icon`),
+      title: t(`benefits.hoverDetails.${hoverKey}.items.0.title`),
+      description: t(`benefits.hoverDetails.${hoverKey}.items.0.description`)
+    },
+    {
+      icon: t(`benefits.hoverDetails.${hoverKey}.items.1.icon`),
+      title: t(`benefits.hoverDetails.${hoverKey}.items.1.title`),
+      description: t(`benefits.hoverDetails.${hoverKey}.items.1.description`)
+    },
+    {
+      icon: t(`benefits.hoverDetails.${hoverKey}.items.2.icon`),
+      title: t(`benefits.hoverDetails.${hoverKey}.items.2.title`),
+      description: t(`benefits.hoverDetails.${hoverKey}.items.2.description`)
+    }
+  ];
+
+  const safeDescription = useSafeHTML(t(descriptionKey));
+
+  return (
+    <motion.div 
+      className="bg-white p-8 rounded-2xl border border-mint-200 hover:border-mint-300 hover:shadow-luxury transition-all duration-300 cursor-pointer relative group h-full"
+      whileHover={{ y: -4, scale: 1.02 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+    >
+      <div className="text-5xl mb-4">{icon}</div>
+      <h3 className="text-2xl font-semibold text-platinum-900 mb-3">
+        {t(titleKey)}
+      </h3>
+      <div 
+        className="text-platinum-700 leading-relaxed mb-4"
+        dangerouslySetInnerHTML={safeDescription}
+      />
+
+      <AnimatePresence>
+        {isHovered && hoverItems.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="pt-4 border-t border-mint-100">
+              <h4 className="font-semibold text-platinum-800 mb-4 text-lg">
+                {hoverTitle}
+              </h4>
+              <div className="space-y-4">
+                {hoverItems.map((item: HoverItem, idx: number) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="text-2xl flex-shrink-0 mt-1">{item.icon}</div>
+                    <div className="flex-1">
+                      <h5 className="font-medium text-platinum-900 text-sm mb-1">
+                        {item.title}
+                      </h5>
+                      <p className="text-platinum-600 text-xs leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Индикатор ховера */}
+      {!isHovered && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute -bottom-2 left-1/2 transform -translate-x-1/2"
+        >
+          <div className="bg-mint-500 text-white text-xs py-1 px-2 rounded whitespace-nowrap shadow-sm">
+            Наведите для деталей
+          </div>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+};
 
 interface BenefitsSectionProps {
   onButtonClick?: () => void;
@@ -34,7 +159,6 @@ interface BenefitsSectionProps {
 export const BenefitsSection = ({ onButtonClick }: BenefitsSectionProps) => {
   const { t } = useLanguage();
 
-  // Используем useSafeHTML для всех описаний с HTML
   const founderStatusDescription = useSafeHTML(t('benefits.killerFeature.founderStatus.description'));
   const exclusiveBonusesDescription = useSafeHTML(t('benefits.killerFeature.exclusiveBonuses.description'));
   const dataImpactDescription = useSafeHTML(t('benefits.killerFeature.dataImpact.description'));
@@ -51,7 +175,7 @@ export const BenefitsSection = ({ onButtonClick }: BenefitsSectionProps) => {
   };
 
   return (
-    <section className="py-20 px-4 bg-gradient-to-b from-mint-25 to-mint-50/70">
+    <section id="benefits" className="py-20 px-4 bg-gradient-to-b from-mint-25 to-mint-50/70">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -86,31 +210,18 @@ export const BenefitsSection = ({ onButtonClick }: BenefitsSectionProps) => {
           </Button>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {benefitsData.map((benefit, index) => {
-            // Для каждого benefit создаем безопасный HTML
-            const safeDescription = useSafeHTML(t(benefit.descriptionKey));
-            
-            return (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white p-8 rounded-2xl border border-mint-200 hover:border-mint-300 hover:shadow-luxury transition-all duration-300"
-              >
-                <div className="text-5xl mb-4">{benefit.icon}</div>
-                <h3 className="text-2xl font-semibold text-platinum-900 mb-3">
-                  {t(benefit.titleKey)}
-                </h3>
-                <p 
-                  className="text-platinum-700 leading-relaxed"
-                  dangerouslySetInnerHTML={safeDescription}
-                />
-              </motion.div>
-            );
-          })}
+        {/* Сетка преимуществ с интерактивными карточками */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          {benefitsData.map((benefit, index) => (
+            <InteractiveBenefitCard
+              key={benefit.titleKey}
+              icon={benefit.icon}
+              titleKey={benefit.titleKey}
+              descriptionKey={benefit.descriptionKey}
+              hoverKey={benefit.hoverKey}
+              index={index}
+            />
+          ))}
         </div>
 
         {/* 🔥 КИЛЛЕР-ФИЧА: Сапфирово-золотой градиент */}
@@ -119,7 +230,7 @@ export const BenefitsSection = ({ onButtonClick }: BenefitsSectionProps) => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7, delay: 0.3 }}
-          className="mt-16 bg-gradient-to-br from-sapphire-600 via-bioblue-700 to-gold-500 rounded-3xl p-8 md:p-12 text-white text-center relative overflow-hidden"
+          className="bg-gradient-to-br from-sapphire-600 via-bioblue-700 to-gold-500 rounded-3xl p-8 md:p-12 text-white text-center relative overflow-hidden"
         >
           {/* Фоновые элементы */}
           <div className="absolute top-4 right-4 text-6xl opacity-20">⭐</div>

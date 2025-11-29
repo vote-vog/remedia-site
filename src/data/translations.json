@@ -32,13 +32,36 @@
       },
       "subtitle": "Простой AI-помощник, который превращает ваши ежедневные наблюдения в чате в ясные закономерности, которые могут упустить врачи",
       "ctaButton": "Начать бесплатно",
+      "howItWorks": "Как это работает:",
+      "hoverHint": "Наведите для деталей",
+      "hoverInstruction": "Наведите на карточки чтобы узнать, как работает каждая функция",
       "features": {
+        "chat": "Естественный чат-интерфейс",
         "charts": "Структурированные графики",
         "notifications": "Умные уведомления",
         "reports": "Информативные отчеты для врача",
         "symptoms": "Отслеживание симптомов в чате",
         "therapy": "Отслеживание терапии",
-        "analysis": "Анализ образа жизни и других факторов"
+        "analysis": "Анализ образа жизни и других факторов",
+        "goals": "Постановка целей"
+      },
+      "benefits": {
+        "chat": "Просто пишите в чат - не нужно заполнять формы и искать кнопки",
+        "notifications": "Не пропускайте прием лекарств и важные измерения",
+        "reports": "Приходите к врачу с готовыми отчетами и графиками",
+        "symptoms": "Записывайте симптомы простым языком как в чате",
+        "therapy": "Отслеживайте эффективность и побочные эффекты лечения",
+        "analysis": "Находите скрытые связи между образом жизни и симптомами",
+        "goals": "Сфокусируйте ИИ на том, что важно именно вам"
+      },
+      "mechanism": {
+        "chat": "Напишите 'поставь напоминание о метотрексате на 8:00' или 'сегодня болят суставы' - AI поймет команду, уточнит детали и сам выполнит действие: запишет симптом, поставит уведомление или добавит данные в график.",
+        "notifications": "AI учится на вашем распорядке и напоминает о лекарствах за 15 минут до обычного времени приема. Отслеживает пропуски и предупреждает о взаимодействиях.",
+        "reports": "Автоматически собираем все ваши данные за период и генерируем PDF-отчет с графиками симптомов, эффективности терапии и выявленными закономерностями.",
+        "symptoms": "Пишите 'болит голова' или 'суставы ноют с утра' - AI распознает 67 симптомов, оценивает интенсивность и связывает с временными метками для анализа.",
+        "therapy": "Строим графики симптомов до и после приема лекарств, вычисляем процент улучшения, отслеживаем побочные эффекты и их частоту.",
+        "analysis": "Сопоставляем 247 параметров: сон, питание, стресс, активность, погоду. Находим паттерны типа 'кофе + недосып = мигрень через 6 часов'.",
+        "goals": "Поставьте цель 'улучшить сон' или 'снизить побочные эффекты' — ИИ будет анализировать данные с учётом ваших приоритетов, отслеживать прогресс и давать персонализированные рекомендации для достижения цели."
       },
       "sechenov": {
         "graduate": "Выпускник",
@@ -46,25 +69,83 @@
       }
     },
     "benefits": {
-      "title": "От хаоса — к контролю.\nОт лечения — к пониманию.",
-      "subtitle": "Мы создаем инструмент, который превращает вас из пассивного пациента в активного участника вашего здоровья.",
-      "ctaButton": "Начать путь",
+      "title": "Превратите борьбу с болезнью в осознанное управление здоровьем",
+      "subtitle": "От стресса и неопределенности — к контролю и пониманию. Вот что изменится в вашей жизни с Remedia:",
+      "ctaButton": "Начать бесплатно",
       "items": {
         "0": {
-          "title": "Находите то, что упускают врачи",
-          "description": "AI анализирует сотни факторов и находит скрытые связи между питанием, сном, стрессом и вашими симптомами. То, что невозможно заметить на одном приеме."
+          "title": "Верните себе контроль над здоровьем",
+          "description": "Из пациента, который просто следует указаниям, в эксперта, который понимает своё тело и управляет состоянием"
         },
         "1": {
-          "title": "Принимайте лекарства с уверенностью",
-          "description": "Отслеживайте эффективность и побочные эффекты в реальном времени. Получайте персонализированные инсайты о вашей реакции на терапию."
+          "title": "Прекратите гадать — получайте персональные ответы", 
+          "description": "Перестаньте методом проб и ошибок искать то, что работает. Получайте данные именно о вашем организме"
         },
         "2": {
-          "title": "Станьте партнером своему врачу",
-          "description": "Приходите на прием с готовыми отчетами и графиками. Помогите врачу принять лучшее решение на основе полной картины вашего состояния."
+          "title": "Станьте партнёром врача, а не просто пациентом",
+          "description": "Превратите стрессовые визиты к врачу в продуктивные встречи экспертов"
+        }
+      },
+      "hoverDetails": {
+        "0": {
+          "title": "Что это значит для вас?",
+          "items": {
+            "0": {
+              "icon": "🎯",
+              "title": "Наконец-то двигайтесь к своим целям, а не к абстрактным \"нормам\"",
+              "description": "Хотите улучшить сон, снизить побочки или вернуться к тренировкам? Не следуйте общим программам - достигайте того, что важно именно вам"
+            },
+            "1": {
+              "icon": "📊", 
+              "title": "Видите прогресс там, где раньше видели только провалы",
+              "description": "Раньше казалось, что лечение не работает? Наши графики покажут даже небольшие улучшения, которые дают мотивацию продолжать"
+            },
+            "2": {
+              "icon": "⚡",
+              "title": "Перестаньте тратить душевные силы на постоянные мысли о здоровье", 
+              "description": "Освободите ментальное пространство - доверьте рутину ИИ, а себе оставьте энергию для жизни, хобби и близких"
+            }
+          }
         },
-        "3": {
-          "title": "Превратите хаос в ясный план",
-          "description": "Получайте персонализированные рекомендации вместо общих советов. 'Кофе + стресс = усиление боли через 6 часов' — такие инсайты меняют всё."
+        "1": {
+          "title": "Как это работает?",
+          "items": {
+            "0": {
+              "icon": "🔍",
+              "title": "Предупреждайте обострения, а не боритесь с последствиями",
+              "description": "Замечали, что плохое самочувствие всегда 'внезапно'? ИИ научится распознавать ваши уникальные сигналы и предупредит заранее"
+            },
+            "1": {
+              "icon": "💡",
+              "title": "Вы пробовали что-то, что кому-то помогает, а вам - нет?",
+              "description": "Это нормально! Каждый организм уникален. Remedia найдёт то, что помогает именно вам, а не 'вообще всем с таким диагнозом'"
+            },
+            "2": {
+              "icon": "🧠",
+              "title": "Перестаньте держать в голове миллион мелочей о здоровье",
+              "description": "Принял ли таблетку? Когда началась боль? Забудьте об этом стрессе - ИИ помнит всё и работает, даже когда вы отдыхаете"
+            }
+          }
+        },
+        "2": {
+          "title": "Что изменится?",
+          "items": {
+            "0": {
+              "icon": "⏱️",
+              "title": "Перестаньте тратить время на попытки вспомнить всё за последние месяцы",
+              "description": "Приходите с готовыми отчётами вместо хаотичных 'ну, в общем, где-то пару недель назад...'"
+            },
+            "1": {
+              "icon": "🎯",
+              "title": "Помогите врачу принять лучшее решение на основе полной картины",
+              "description": "Дайте специалисту не отрывочные жалобы, а структурированные данные - это меняет качество лечения"
+            },
+            "2": {
+              "icon": "🤝",
+              "title": "Измените динамику общения с 'пациент-доктор' на 'партнёры по решению проблемы'",
+              "description": "Чувствуйте себя увереннее, когда приходите не с проблемой, а с данными для её решения"
+            }
+          }
         }
       },
       "killerFeature": {
@@ -74,7 +155,7 @@
           "description": "Получите пожизненный доступ к премиум-функциям и влияние на развитие платформы"
         },
         "exclusiveBonuses": {
-          "title": "Эксклюзивные бонусы",
+          "title": "Эксклюзивные бонусы", 
           "description": "Персональные консультации, ранний доступ к новым функциям и специальные условия"
         },
         "dataImpact": {
@@ -200,7 +281,7 @@
           "items": {
             "0": "Следующие 2 недели: SechenovTech Acceleration DemoDay",
             "1": "Январь: Закрытый бета-тест с вашим участием",
-            "2": "3 месяца: Цифровой двойник здоровья"
+            "2": "3 месяцев: Цифровой двойник здоровья"
           }
         },
         "finalMessage": "<strong>Благодарим за доверие нашей миссии.</strong> Вместе мы создаем среду, где управление здоровьем становится осознанным и управляемым процессом. Ваш вклад — неотъемлемая часть этих изменений."
@@ -422,7 +503,7 @@
       "completion": {
         "allEggs": "Все пасхалки",
         "title": "Вау! Поздравляем! 🎉",
-        "description": "<strong>Ваше упорство в изучении Remedia достойно всяких похвал!</strong><br />Вы многого добьетесь в исследовании своего организма с Remedia!",
+        "description": "<strong>Ваше упорство в изучение Remedia достойно всяких похвал!</strong><br />Вы многого добьетесь в исследовании своего организма с Remedia!",
         "ps": "P.S.: а Вы уже пробовали заполнить капсулу до 200%? 😉",
         "continueButton": "Продолжить исследование! 🚀"
       }
@@ -614,13 +695,36 @@
       },
       "subtitle": "Simple AI assistant that turns your daily chat observations into clear patterns that doctors might miss",
       "ctaButton": "Start for free",
+      "howItWorks": "How it works:",
+      "hoverHint": "Hover for details",
+      "hoverInstruction": "Hover over cards to learn how each feature works",
       "features": {
+        "chat": "Natural Chat Interface",
         "charts": "Structured charts",
         "notifications": "Smart notifications",
         "reports": "Informative reports for doctors",
         "symptoms": "Symptom tracking in chat",
         "therapy": "Therapy tracking",
-        "analysis": "Lifestyle and factor analysis"
+        "analysis": "Lifestyle and factor analysis",
+        "goals": "Goal Setting"
+      },
+      "benefits": {
+        "chat": "Just write in chat - no need to fill out forms and search for buttons",
+        "notifications": "Don't miss medications and important measurements",
+        "reports": "Come to your doctor with ready reports and charts",
+        "symptoms": "Record symptoms in simple language as in chat",
+        "therapy": "Track treatment effectiveness and side effects",
+        "analysis": "Find hidden connections between lifestyle and symptoms",
+        "goals": "Focus AI on what matters to you"
+      },
+      "mechanism": {
+        "chat": "Write 'set a reminder for methotrexate at 8:00' or 'joints hurt today' - AI will understand the command, clarify details and perform the action itself: record a symptom, set a notification or add data to the chart.",
+        "notifications": "AI learns your routine and reminds you about medications 15 minutes before your usual intake time. Tracks misses and warns about interactions.",
+        "reports": "We automatically collect all your data for the period and generate a PDF report with symptom charts, therapy effectiveness and identified patterns.",
+        "symptoms": "Write 'headache' or 'joints ache in the morning' - AI recognizes 67 symptoms, assesses intensity and links them with timestamps for analysis.",
+        "therapy": "We build symptom charts before and after medication intake, calculate improvement percentage, track side effects and their frequency.",
+        "analysis": "We compare 247 parameters: sleep, nutrition, stress, activity, weather. Find patterns like 'coffee + lack of sleep = migraine after 6 hours'.",
+        "goals": "Set a goal like 'improve sleep' or 'reduce side effects' — AI will analyze data considering your priorities, track progress and give personalized recommendations to achieve the goal."
       },
       "sechenov": {
         "graduate": "Graduate",
@@ -628,31 +732,89 @@
       }
     },
     "benefits": {
-      "title": "From chaos — to control.\nFrom treatment — to understanding.",
-      "subtitle": "We create a tool that transforms you from a passive patient into an active participant in your health.",
-      "ctaButton": "Start the journey",
+      "title": "Turn disease struggle into conscious health management", 
+      "subtitle": "From stress and uncertainty to control and understanding. Here's what will change in your life with Remedia:",
+      "ctaButton": "Start for free",
       "items": {
         "0": {
-          "title": "Find what doctors miss",
-          "description": "AI analyzes hundreds of factors and finds hidden connections between nutrition, sleep, stress and your symptoms. What's impossible to notice in one appointment."
+          "title": "Regain control over your health",
+          "description": "From a patient who just follows instructions to an expert who understands their body and manages their condition"
         },
         "1": {
-          "title": "Take medications with confidence",
-          "description": "Track effectiveness and side effects in real time. Get personalized insights about your response to therapy."
+          "title": "Stop guessing — get personalized answers",
+          "description": "Stop searching for what works through trial and error. Get data specifically about your body"
         },
         "2": {
-          "title": "Become your doctor's partner",
-          "description": "Come to appointments with ready reports and charts. Help your doctor make the best decision based on a complete picture of your condition."
+          "title": "Become your doctor's partner, not just a patient",
+          "description": "Turn stressful doctor visits into productive expert meetings"
+        }
+      },
+      "hoverDetails": {
+        "0": {
+          "title": "What does this mean for you?",
+          "items": {
+            "0": {
+              "icon": "🎯",
+              "title": "Finally move towards your goals, not abstract \"norms\"",
+              "description": "Want to improve sleep, reduce side effects or return to workouts? Don't follow generic programs - achieve what matters specifically to you"
+            },
+            "1": {
+              "icon": "📊",
+              "title": "See progress where you used to see only failures",
+              "description": "Did it seem like treatment wasn't working before? Our charts will show even small improvements that motivate you to continue"
+            },
+            "2": {
+              "icon": "⚡", 
+              "title": "Stop spending mental energy on constant health thoughts",
+              "description": "Free up mental space - trust routine to AI, and leave energy for life, hobbies and loved ones"
+            }
+          }
         },
-        "3": {
-          "title": "Turn chaos into a clear plan",
-          "description": "Get personalized recommendations instead of general advice. 'Coffee + stress = increased pain after 6 hours' — such insights change everything."
+        "1": {
+          "title": "How does it work?",
+          "items": {
+            "0": {
+              "icon": "🔍",
+              "title": "Prevent flare-ups, don't fight consequences",
+              "description": "Noticed that poor health is always 'sudden'? AI will learn to recognize your unique signals and warn you in advance"
+            },
+            "1": {
+              "icon": "💡",
+              "title": "Have you tried something that helps others but not you?",
+              "description": "That's normal! Every body is unique. Remedia will find what works specifically for you, not 'everyone with this diagnosis'"
+            },
+            "2": {
+              "icon": "🧠",
+              "title": "Stop keeping a million health details in your head", 
+              "description": "Did I take the pill? When did the pain start? Forget this stress - AI remembers everything and works even when you rest"
+            }
+          }
+        },
+        "2": {
+          "title": "What will change?",
+          "items": {
+            "0": {
+              "icon": "⏱️",
+              "title": "Stop wasting time trying to remember everything from recent months",
+              "description": "Come with ready reports instead of chaotic 'well, generally, somewhere a couple weeks ago...'"
+            },
+            "1": {
+              "icon": "🎯",
+              "title": "Help your doctor make the best decision based on complete picture",
+              "description": "Give the specialist not fragmentary complaints, but structured data - this changes treatment quality"
+            },
+            "2": {
+              "icon": "🤝",
+              "title": "Change communication dynamics from 'patient-doctor' to 'problem-solving partners'",
+              "description": "Feel more confident when you come not with a problem, but with data to solve it"
+            }
+          }
         }
       },
       "killerFeature": {
         "title": "By trying the app.\nYou <span class='text-yellow-300'>create the future</span> of medicine.",
         "founderStatus": {
-          "title": "Founder Status",
+          "title": "Founder Status", 
           "description": "Get lifetime access to premium features and influence on platform development"
         },
         "exclusiveBonuses": {
@@ -661,7 +823,7 @@
         },
         "dataImpact": {
           "title": "💫 Your anonymous data will help thousands of others",
-          "description": "Every entry in your diary makes medicine more personalized and effective for everyone"
+          "description": "Every entry in your diary makes medicine more personalized and effective for everyone" 
         },
         "ctaButton": "🚀 Become Remedia Founder",
         "footer": "Join the first 1000 users and get exclusive privileges"
@@ -998,7 +1160,7 @@
         },
         "healthEcosystem": {
           "title": "Health Ecosystem 🏥",
-          "content": "We're building not an app, but a whole ecosystem: patients + doctors + researchers + pharma companies. Together we are stronger!"
+          "content": "We're building not an app, but a whole ecosystem: patients + врачи + исследователи + фармакомпании. Все вместе мы сильнее!"
         }
       },
       "completion": {
