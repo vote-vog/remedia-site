@@ -1,6 +1,6 @@
 // src/components/EasterEggs.tsx
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   X, Sparkles, Heart, Zap, Users, Target, Clock, Brain, Shield, Rocket, 
   Cpu, Activity, Dna, Network, Globe, Trophy, Star, Award
@@ -19,20 +19,6 @@ interface EasterEgg {
   condition?: () => boolean;
   weight?: number;
   bounce?: number;
-}
-
-interface EggPhysics {
-  id: string;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  weight: number;
-  radius: number;
-  isFalling: boolean;
-  isOnString: boolean;
-  stringLength: number;
-  bounce: number;
 }
 
 interface EasterEggsProps {
@@ -120,14 +106,6 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
   const [hasClickedProgress, setHasClickedProgress] = useState(false);
   const [viewedEggs, setViewedEggs] = useState<Set<string>>(new Set());
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
-  const [eggPhysics, setEggPhysics] = useState<Map<string, EggPhysics>>(new Map());
-  const animationRef = useRef<number>();
-  const lastUpdateTime = useRef<number>(Date.now());
-
-  // 🔥 Двигаем canActivateEgg ВВЕРХ, перед использованием
-  const canActivateEgg = useCallback((eggId: string) => {
-    return !viewedEggs.has(eggId);
-  }, [viewedEggs]);
 
   const eggs: EasterEgg[] = [
     {
@@ -241,169 +219,22 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     }
   ];
 
-  // 🔥 Функция для создания физического объекта яйца
-  const createEggPhysics = useCallback((egg: EasterEgg): EggPhysics => {
-    const radius = egg.weight && egg.weight > 1.3 ? 32 : 
-                  egg.weight && egg.weight < 0.9 ? 20 : 24;
+  const getRandomPositionWithPhysics = useCallback((egg: EasterEgg) => {
+    const startY = -10;
+    const startX = Math.random() * 80 + 10;
+    
+    const finalY = Math.min(egg.position.y + (Math.random() * 20 - 10), 85);
     
     return {
-      id: egg.id,
-      x: egg.position.x,
-      y: -10, // Начинаем выше экрана
-      vx: 0,
-      vy: 0,
-      weight: egg.weight || 1,
-      radius,
-      isFalling: false,
-      isOnString: true,
-      stringLength: egg.position.y + 10, // Длина нитки до целевой позиции
+      startX,
+      startY,
+      finalX: startX,
+      finalY,
+      duration: 1.5 + (egg.weight || 1) * 0.5,
       bounce: egg.bounce || 0.7
     };
   }, []);
 
-  // 🔥 Основной цикл физики
-  const updatePhysics = useCallback(() => {
-    const now = Date.now();
-    const deltaTime = Math.min((now - lastUpdateTime.current) / 1000, 0.1); // Ограничиваем deltaTime
-    lastUpdateTime.current = now;
-
-    setEggPhysics(prev => {
-      const newPhysics = new Map(prev);
-      const eggsArray = Array.from(newPhysics.values());
-      
-      eggsArray.forEach(egg => {
-        // Копируем текущее состояние
-        const updatedEgg = { ...egg };
-        
-        if (updatedEgg.isOnString) {
-          // 🔥 Фаза на нитке - плавное раскачивание
-          const targetY = updatedEgg.stringLength;
-          const stringTension = 0.5; // Натяжение нитки
-          
-          // Плавное движение к целевой позиции с небольшими колебаниями
-          updatedEgg.vy += (targetY - updatedEgg.y) * stringTension * deltaTime;
-          updatedEgg.vy *= 0.95; // Сопротивление воздуха
-          
-          // Случайные небольшие колебания для имитации раскачивания
-          updatedEgg.vx += (Math.random() - 0.5) * 2 * deltaTime;
-          updatedEgg.vx *= 0.98;
-          
-          // Проверяем, не порвалась ли нитка (случайно или по весу)
-          const stringBreakChance = 0.002 * updatedEgg.weight; // Более тяжелые чаще рвут нитку
-          if (Math.random() < stringBreakChance * deltaTime * 60) {
-            updatedEgg.isOnString = false;
-            updatedEgg.isFalling = true;
-            // При обрыве добавляем случайный импульс
-            updatedEgg.vx += (Math.random() - 0.5) * 10;
-          }
-        } else if (updatedEgg.isFalling) {
-          // 🔥 Фаза свободного падения
-          const gravity = 980; // Сила гравитации
-          updatedEgg.vy += gravity * deltaTime * 0.1; // Ускорение свободного падения
-          
-          // Сопротивление воздуха
-          updatedEgg.vx *= 0.99;
-          updatedEgg.vy *= 0.995;
-        }
-        
-        // Обновляем позицию
-        updatedEgg.x += updatedEgg.vx * deltaTime;
-        updatedEgg.y += updatedEgg.vy * deltaTime;
-        
-        // 🔥 Обработка столкновений со стенками
-        const screenWidth = 100; // в vw
-        const screenHeight = 100; // в vh
-        const groundLevel = 85; // Уровень "земли"
-        
-        // Столкновение с левой/правой стенкой
-        if (updatedEgg.x - updatedEgg.radius / 2 < 0) {
-          updatedEgg.x = updatedEgg.radius / 2;
-          updatedEgg.vx = Math.abs(updatedEgg.vx) * updatedEgg.bounce;
-        } else if (updatedEgg.x + updatedEgg.radius / 2 > screenWidth) {
-          updatedEgg.x = screenWidth - updatedEgg.radius / 2;
-          updatedEgg.vx = -Math.abs(updatedEgg.vx) * updatedEgg.bounce;
-        }
-        
-        // Столкновение с "землей"
-        if (updatedEgg.y + updatedEgg.radius / 2 > groundLevel) {
-          updatedEgg.y = groundLevel - updatedEgg.radius / 2;
-          updatedEgg.vy = -Math.abs(updatedEgg.vy) * updatedEgg.bounce;
-          
-          // Если скорость очень маленькая - останавливаем
-          if (Math.abs(updatedEgg.vy) < 5) {
-            updatedEgg.vy = 0;
-            updatedEgg.isFalling = false;
-          }
-        }
-        
-        // 🔥 Столкновения между яйцами
-        eggsArray.forEach(otherEgg => {
-          if (otherEgg.id === updatedEgg.id) return;
-          
-          const dx = otherEgg.x - updatedEgg.x;
-          const dy = otherEgg.y - updatedEgg.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          const minDistance = updatedEgg.radius / 2 + otherEgg.radius / 2;
-          
-          if (distance < minDistance && distance > 0) {
-            // Столкновение!
-            const angle = Math.atan2(dy, dx);
-            const targetX = updatedEgg.x + Math.cos(angle) * minDistance;
-            const targetY = updatedEgg.y + Math.sin(angle) * minDistance;
-            
-            // Отталкивание
-            const force = 0.5;
-            updatedEgg.x -= (targetX - updatedEgg.x) * force;
-            updatedEgg.y -= (targetY - updatedEgg.y) * force;
-            
-            // Обмен импульсами (более легкое яйцо получает больше скорости)
-            const totalMass = updatedEgg.weight + otherEgg.weight;
-            const impulse = 2 * (updatedEgg.vx * dx + updatedEgg.vy * dy) / (totalMass * distance * distance);
-            
-            // Более легкое яйцо отлетает сильнее
-            const lightEggBoost = otherEgg.weight / updatedEgg.weight;
-            updatedEgg.vx -= impulse * otherEgg.weight * dx * lightEggBoost * updatedEgg.bounce;
-            updatedEgg.vy -= impulse * otherEgg.weight * dy * lightEggBoost * updatedEgg.bounce;
-          }
-        });
-        
-        newPhysics.set(updatedEgg.id, updatedEgg);
-      });
-      
-      return newPhysics;
-    });
-    
-    animationRef.current = requestAnimationFrame(updatePhysics);
-  }, []);
-
-  // 🔥 Запускаем физику при появлении яиц
-  useEffect(() => {
-    if (activeEggs.size > 0 && !animationRef.current) {
-      lastUpdateTime.current = Date.now();
-      animationRef.current = requestAnimationFrame(updatePhysics);
-    }
-    
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-        animationRef.current = undefined;
-      }
-    };
-  }, [activeEggs.size, updatePhysics]);
-
-  // 🔥 Инициализируем физику для новых яиц
-  useEffect(() => {
-    activeEggs.forEach(eggId => {
-      if (!eggPhysics.has(eggId) && canActivateEgg(eggId)) {
-        const egg = eggs.find(e => e.id === eggId);
-        if (egg) {
-          setEggPhysics(prev => new Map(prev).set(eggId, createEggPhysics(egg)));
-        }
-      }
-    });
-  }, [activeEggs, eggPhysics, canActivateEgg, eggs, createEggPhysics]);
-
-  // 🔥 Остальные хуки
   useEffect(() => {
     const savedViewedEggs = sessionStorage.getItem('easterEggs_viewed');
     if (savedViewedEggs) {
@@ -420,6 +251,10 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     if (viewedEggs.size > 0) {
       sessionStorage.setItem('easterEggs_viewed', JSON.stringify(Array.from(viewedEggs)));
     }
+  }, [viewedEggs]);
+
+  const canActivateEgg = useCallback((eggId: string) => {
+    return !viewedEggs.has(eggId);
   }, [viewedEggs]);
 
   useEffect(() => {
@@ -476,7 +311,7 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     return () => {
       timeouts.forEach(timeout => clearTimeout(timeout));
     };
-  }, [activeEggs, canActivateEgg, eggs]);
+  }, [activeEggs, canActivateEgg]);
 
   const checkAllEggsCompleted = useCallback((newViewedEggs: Set<string>) => {
     const allEggIds = eggs.map(egg => egg.id);
@@ -516,11 +351,6 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
       setActiveEggs(prev => {
         const newSet = new Set(prev);
         newSet.delete(eggId);
-        setEggPhysics(prevPhysics => {
-          const newPhysics = new Map(prevPhysics);
-          newPhysics.delete(eggId);
-          return newPhysics;
-        });
         console.log(`🎯 Removed easter egg: ${eggId} (viewed)`);
         return newSet;
       });
@@ -560,25 +390,44 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
     return baseSize;
   };
 
-  // 🔥 Новый компонент яйца с физикой
-  const PhysicsEgg = ({ egg }: { egg: EasterEgg }) => {
-    const physics = eggPhysics.get(egg.id);
+  const EggWithPhysics = ({ egg }: { egg: EasterEgg }) => {
+    const physics = getRandomPositionWithPhysics(egg);
     
-    if (!physics) return null;
-
     return (
       <motion.button
-        initial={false}
+        initial={{ 
+          scale: 0, 
+          opacity: 0, 
+          rotate: -180,
+          x: `${physics.startX}vw`,
+          y: `${physics.startY}vh`
+        }}
         animate={{ 
-          x: `${physics.x}vw`,
-          y: `${physics.y}vh`,
-          rotate: physics.vx * 2 // Вращение based on horizontal velocity
+          scale: 1, 
+          opacity: 1, 
+          rotate: 0,
+          x: `${physics.finalX}vw`,
+          y: `${physics.finalY}vh`,
+          transition: {
+            type: "spring",
+            damping: 20 - (egg.bounce || 0.7) * 15,
+            stiffness: 100 + (egg.weight || 1) * 50,
+            mass: egg.weight || 1,
+            bounce: egg.bounce || 0.7,
+            duration: physics.duration
+          }
         }}
-        transition={{ 
-          type: "tween",
-          duration: 0 // Мгновенные обновления для плавной физики
+        whileHover={{ 
+          scale: 1.15, 
+          rotate: 5,
+          y: `${physics.finalY}vh - 5px`,
+          transition: { type: "spring", stiffness: 400 }
         }}
-        className={`fixed z-40 cursor-pointer group ${getEggSize(egg.id)}`}
+        whileTap={{ 
+          scale: 0.95,
+          transition: { type: "spring", stiffness: 600 }
+        }}
+        className={`fixed z-40 cursor-pointer group`}
         style={{
           left: 0,
           top: 0,
@@ -586,25 +435,6 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
         }}
         onClick={() => handleEggClick(egg.id)}
       >
-        {/* Визуализация нитки (только когда яйцо на нитке) */}
-        {physics.isOnString && (
-          <motion.div
-            className="absolute left-1/2 top-0 w-px bg-gradient-to-b from-gray-400/50 to-transparent"
-            style={{
-              height: `${physics.y + 10}vh`,
-              x: '-50%'
-            }}
-            animate={{
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity
-            }}
-          />
-        )}
-
-        {/* Анимированный фон */}
         <motion.div
           className="absolute -inset-4 rounded-full opacity-70"
           animate={{
@@ -622,49 +452,45 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
           }}
         />
         
-        {/* Основная капсула */}
         <motion.div
-          className={`relative w-full h-full bg-white/95 backdrop-blur-xl rounded-2xl border-2 border-white/60 shadow-2xl flex items-center justify-center`}
+          className={`relative ${getEggSize(egg.id)} bg-white/95 backdrop-blur-xl rounded-2xl border-2 border-white/60 shadow-2xl flex items-center justify-center`}
           whileHover={{
-            scale: 1.1,
             boxShadow: `0 0 30px ${getEggColor(egg.id)}`,
             borderColor: 'rgba(255,255,255,0.9)',
-          }}
-          whileTap={{ 
-            scale: 0.95
           }}
           style={{
             background: 'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.8))',
           }}
         >
-          {/* Стеклянный эффект */}
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/40 via-transparent to-white/10 mix-blend-overlay" />
           
-          {/* Иконка */}
           <div className="relative z-10" style={{ color: getEggColor(egg.id).replace('0.8', '1') }}>
             {egg.icon}
           </div>
 
-          {/* Эффект "обрыва нитки" */}
-          {!physics.isOnString && physics.isFalling && (
-            <motion.div
-              className="absolute -inset-2 rounded-2xl border-2 border-red-400/50"
-              initial={{ scale: 1, opacity: 1 }}
-              animate={{ scale: 1.5, opacity: 0 }}
-              transition={{ duration: 0.5 }}
-            />
-          )}
+          <motion.div
+            className="absolute -inset-2 rounded-2xl border-2 border-white/40"
+            animate={{
+              scale: [1, 1.4, 1],
+              opacity: [0.3, 0, 0.3],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              delay: Math.random() * 2
+            }}
+          />
 
-          {/* Блики */}
           <div className="absolute inset-0 rounded-2xl pointer-events-none">
             <div className="absolute left-1 top-1 w-6 h-8 bg-white/30 rounded-full blur-lg" />
             <div className="absolute right-1 top-2 w-4 h-4 bg-white/50 rounded-full blur-md" />
           </div>
         </motion.div>
 
-        {/* Тултип при hover */}
         <motion.div
           className="absolute left-1/2 top-full mt-3 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300 bg-gray-900/90 text-white text-xs py-2 px-3 rounded-lg whitespace-nowrap backdrop-blur-sm border border-gray-700"
+          initial={{ y: -10 }}
+          whileHover={{ y: 0 }}
         >
           {egg.title}
           <div className="absolute left-1/2 bottom-full transform -translate-x-1/2 w-2 h-2 bg-gray-900/90 rotate-45 border-l border-t border-gray-700" />
@@ -675,7 +501,6 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
 
   console.log('🎯 Active easter eggs:', Array.from(activeEggs));
   console.log('👀 Viewed easter eggs:', Array.from(viewedEggs));
-  console.log('🔬 Physics state:', Array.from(eggPhysics.entries()));
 
   return (
     <>
@@ -704,8 +529,8 @@ export const EasterEggs = ({ progressBarClicked = false, anyButtonClicked = fals
       {/* Плавающие капсулки с физикой */}
       {eggs.map(egg => (
         <AnimatePresence key={egg.id}>
-          {activeEggs.has(egg.id) && canActivateEgg(egg.id) && eggPhysics.has(egg.id) && (
-            <PhysicsEgg egg={egg} />
+          {activeEggs.has(egg.id) && canActivateEgg(egg.id) && (
+            <EggWithPhysics egg={egg} />
           )}
         </AnimatePresence>
       ))}
